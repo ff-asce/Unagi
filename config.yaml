@@ -16,7 +16,15 @@ git:
   auto_push: true  # Push to remote after every commit
   
 ui:
+  mode: classic  # classic | modern (modern uses Textual framework)
   show_mascot: true  # Show pixel art on startup
   theme: dark  # dark | light
+  
+  # Modern UI settings (only used when mode=modern)
+  modern:
+    animation_level: full  # full | minimal (full has swimming eel, bubbles, transitions)
+    stats_panel: true  # Show stats panel by default (toggle with Ctrl+S or /stats)
+    color_scheme: retro  # retro (orange/purple) | classic (cyan/green)
+    pixel_art_style: true  # Use 8-bit retro videogame aesthetic
 
 # Made with Bob

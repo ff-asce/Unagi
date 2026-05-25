@@ -1,0 +1,81 @@
+Collecting textual
+  Downloading textual-8.2.7-py3-none-any.whl.metadata (9.1 kB)
+Collecting textual-dev
+  Downloading textual_dev-1.8.0-py3-none-any.whl.metadata (1.7 kB)
+Requirement already satisfied: markdown-it-py>=2.1.0 in ./venv/lib/python3.12/site-packages (from markdown-it-py[linkify]>=2.1.0->textual) (4.2.0)
+Collecting mdit-py-plugins (from textual)
+  Downloading mdit_py_plugins-0.6.1-py3-none-any.whl.metadata (2.9 kB)
+Collecting platformdirs<5,>=3.6.0 (from textual)
+  Downloading platformdirs-4.9.6-py3-none-any.whl.metadata (4.7 kB)
+Requirement already satisfied: pygments<3.0.0,>=2.19.2 in ./venv/lib/python3.12/site-packages (from textual) (2.20.0)
+Requirement already satisfied: rich>=14.2.0 in ./venv/lib/python3.12/site-packages (from textual) (15.0.0)
+Requirement already satisfied: typing-extensions<5.0.0,>=4.4.0 in ./venv/lib/python3.12/site-packages (from textual) (4.15.0)
+Collecting aiohttp>=3.8.1 (from textual-dev)
+  Downloading aiohttp-3.13.5-cp312-cp312-macosx_11_0_arm64.whl.metadata (8.1 kB)
+Collecting click>=8.1.2 (from textual-dev)
+  Downloading click-8.4.1-py3-none-any.whl.metadata (2.6 kB)
+Collecting msgpack>=1.0.3 (from textual-dev)
+  Downloading msgpack-1.1.2-cp312-cp312-macosx_11_0_arm64.whl.metadata (8.1 kB)
+Collecting textual_serve>=1.0.3 (from textual-dev)
+  Downloading textual_serve-1.1.3-py3-none-any.whl.metadata (4.0 kB)
+Collecting aiohappyeyeballs>=2.5.0 (from aiohttp>=3.8.1->textual-dev)
+  Downloading aiohappyeyeballs-2.6.2-py3-none-any.whl.metadata (5.9 kB)
+Collecting aiosignal>=1.4.0 (from aiohttp>=3.8.1->textual-dev)
+  Downloading aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+Collecting attrs>=17.3.0 (from aiohttp>=3.8.1->textual-dev)
+  Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+Collecting frozenlist>=1.1.1 (from aiohttp>=3.8.1->textual-dev)
+  Downloading frozenlist-1.8.0-cp312-cp312-macosx_11_0_arm64.whl.metadata (20 kB)
+Collecting multidict<7.0,>=4.5 (from aiohttp>=3.8.1->textual-dev)
+  Downloading multidict-6.7.1-cp312-cp312-macosx_11_0_arm64.whl.metadata (5.3 kB)
+Collecting propcache>=0.2.0 (from aiohttp>=3.8.1->textual-dev)
+  Downloading propcache-0.5.2-cp312-cp312-macosx_11_0_arm64.whl.metadata (16 kB)
+Collecting yarl<2.0,>=1.17.0 (from aiohttp>=3.8.1->textual-dev)
+  Downloading yarl-1.24.2-cp312-cp312-macosx_11_0_arm64.whl.metadata (94 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 94.2/94.2 kB 2.8 MB/s eta 0:00:00
+Requirement already satisfied: mdurl~=0.1 in ./venv/lib/python3.12/site-packages (from markdown-it-py>=2.1.0->markdown-it-py[linkify]>=2.1.0->textual) (0.1.2)
+Collecting linkify-it-py<3,>=1 (from markdown-it-py[linkify]>=2.1.0->textual)
+  Downloading linkify_it_py-2.1.0-py3-none-any.whl.metadata (8.5 kB)
+Collecting aiohttp-jinja2>=1.6 (from textual_serve>=1.0.3->textual-dev)
+  Downloading aiohttp_jinja2-1.6-py3-none-any.whl.metadata (8.2 kB)
+Collecting jinja2>=3.1.4 (from textual_serve>=1.0.3->textual-dev)
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting MarkupSafe>=2.0 (from jinja2>=3.1.4->textual_serve>=1.0.3->textual-dev)
+  Downloading markupsafe-3.0.3-cp312-cp312-macosx_11_0_arm64.whl.metadata (2.7 kB)
+Collecting uc-micro-py (from linkify-it-py<3,>=1->markdown-it-py[linkify]>=2.1.0->textual)
+  Downloading uc_micro_py-2.0.0-py3-none-any.whl.metadata (2.2 kB)
+Requirement already satisfied: idna>=2.0 in ./venv/lib/python3.12/site-packages (from yarl<2.0,>=1.17.0->aiohttp>=3.8.1->textual-dev) (3.16)
+Downloading textual-8.2.7-py3-none-any.whl (731 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 731.1/731.1 kB 10.5 MB/s eta 0:00:00
+Downloading textual_dev-1.8.0-py3-none-any.whl (27 kB)
+Downloading aiohttp-3.13.5-cp312-cp312-macosx_11_0_arm64.whl (500 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 500.3/500.3 kB 35.0 MB/s eta 0:00:00
+Downloading click-8.4.1-py3-none-any.whl (116 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 116.6/116.6 kB 11.5 MB/s eta 0:00:00
+Downloading msgpack-1.1.2-cp312-cp312-macosx_11_0_arm64.whl (85 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 85.1/85.1 kB 7.0 MB/s eta 0:00:00
+Downloading platformdirs-4.9.6-py3-none-any.whl (21 kB)
+Downloading textual_serve-1.1.3-py3-none-any.whl (447 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 447.3/447.3 kB 31.5 MB/s eta 0:00:00
+Downloading mdit_py_plugins-0.6.1-py3-none-any.whl (66 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 66.7/66.7 kB 7.2 MB/s eta 0:00:00
+Downloading aiohappyeyeballs-2.6.2-py3-none-any.whl (15 kB)
+Downloading aiohttp_jinja2-1.6-py3-none-any.whl (11 kB)
+Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.5/67.5 kB 5.4 MB/s eta 0:00:00
+Downloading frozenlist-1.8.0-cp312-cp312-macosx_11_0_arm64.whl (50 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.4/50.4 kB 5.0 MB/s eta 0:00:00
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 13.2 MB/s eta 0:00:00
+Downloading linkify_it_py-2.1.0-py3-none-any.whl (19 kB)
+Downloading multidict-6.7.1-cp312-cp312-macosx_11_0_arm64.whl (43 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 43.9/43.9 kB 4.0 MB/s eta 0:00:00
+Downloading propcache-0.5.2-cp312-cp312-macosx_11_0_arm64.whl (55 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 55.2/55.2 kB 5.9 MB/s eta 0:00:00
+Downloading yarl-1.24.2-cp312-cp312-macosx_11_0_arm64.whl (91 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 91.7/91.7 kB 7.7 MB/s eta 0:00:00
+Downloading markupsafe-3.0.3-cp312-cp312-macosx_11_0_arm64.whl (12 kB)
+Downloading uc_micro_py-2.0.0-py3-none-any.whl (6.4 kB)
+Installing collected packages: uc-micro-py, propcache, platformdirs, multidict, msgpack, MarkupSafe, frozenlist, click, attrs, aiohappyeyeballs, yarl, mdit-py-plugins, linkify-it-py, jinja2, aiosignal, aiohttp, textual, aiohttp-jinja2, textual_serve, textual-dev
+Successfully installed MarkupSafe-3.0.3 aiohappyeyeballs-2.6.2 aiohttp-3.13.5 aiohttp-jinja2-1.6 aiosignal-1.4.0 attrs-26.1.0 click-8.4.1 frozenlist-1.8.0 jinja2-3.1.6 linkify-it-py-2.1.0 mdit-py-plugins-0.6.1 msgpack-1.1.2 multidict-6.7.1 platformdirs-4.9.6 propcache-0.5.2 textual-8.2.7 textual-dev-1.8.0 textual_serve-1.1.3 uc-micro-py-2.0.0 yarl-1.24.2
