@@ -16,7 +16,7 @@ git:
   auto_push: true  # Push to remote after every commit
   
 ui:
-  mode: classic  # classic | modern (modern uses Textual framework)
+  mode: modern  # classic | modern (modern uses Textual framework)
   show_mascot: true  # Show pixel art on startup
   theme: dark  # dark | light
   
