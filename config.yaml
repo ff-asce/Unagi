@@ -1,0 +1,22 @@
+vault:
+  root_path: "/Users/parthjindal/Documents/Obisidian Vaults/"  # Matches your actual folder name (with typo)
+  unagi_folder: Unagi
+  logs_subfolder: Daily Logs
+  data_subfolder: Data
+  user_profile_filename: User Profile.md
+  dashboard_filename: Nutrition Dashboard.md
+
+agent:
+  context_days: 7  # How many recent log files to inject as context
+  confirm_before_write: true  # Ask user to confirm before writing files
+  
+git:
+  enabled: true
+  branch: main
+  auto_push: true  # Push to remote after every commit
+  
+ui:
+  show_mascot: true  # Show pixel art on startup
+  theme: dark  # dark | light
+
+# Made with Bob
