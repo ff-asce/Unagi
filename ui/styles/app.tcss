@@ -1,0 +1,217 @@
+/* UNAGI Modern UI - 8-Bit Retro Pixel Art Style */
+/* Textual CSS for terminal UI styling */
+
+/* Color Variables */
+$orange: #FF6B35;
+$purple: #7C3AED;
+$dark-bg: #1A1A2E;
+$panel-bg: #0F0F1E;
+$light-text: #E8E8E8;
+$success: #00FF00;
+$warning: #FFFF00;
+$error: #FF0000;
+$info: #00FFFF;
+
+/* Global App Styling */
+Screen {
+    background: $dark-bg;
+    color: $light-text;
+}
+
+/* Main Container Layout */
+#main-container {
+    layout: horizontal;
+    height: 100%;
+}
+
+/* Left Panel - Chat Area (60% width) */
+#left-panel {
+    width: 60%;
+    height: 100%;
+    border: thick $orange;
+    background: $panel-bg;
+}
+
+/* Right Panel - Stats Dashboard (40% width) */
+#right-panel {
+    width: 40%;
+    height: 100%;
+    border: thick $purple;
+    background: $panel-bg;
+}
+
+/* Eel Mascot Widget */
+EelMascot {
+    height: 12;
+    content-align: center middle;
+    background: $panel-bg;
+    border: round $orange;
+    margin: 1;
+}
+
+/* Chat Panel */
+ChatPanel {
+    height: 1fr;
+    scrollbar-gutter: stable;
+    background: $panel-bg;
+    padding: 1;
+}
+
+/* Chat Messages */
+ChatMessage {
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+/* Confirmation Widget */
+ConfirmationWidget {
+    padding: 1 2;
+    margin: 1 0;
+    background: $dark-bg;
+    border: thick $warning;
+}
+
+/* Stats Dashboard */
+StatsDashboard {
+    height: 100%;
+    padding: 1;
+    overflow-y: auto;
+}
+
+/* Macro Display */
+MacroDisplay {
+    padding: 1;
+    margin: 0 0 1 0;
+    border: round $orange;
+    background: $panel-bg;
+}
+
+/* Micro Display */
+MicroDisplay {
+    padding: 1;
+    margin: 0 0 1 0;
+    border: round $purple;
+    background: $panel-bg;
+}
+
+/* Weekly Trend */
+WeeklyTrend {
+    padding: 1;
+    border: round $info;
+    background: $panel-bg;
+}
+
+/* Input Bar */
+#input-bar {
+    height: 3;
+    dock: bottom;
+    border: thick $orange;
+    background: $panel-bg;
+}
+
+Input {
+    background: $dark-bg;
+    border: none;
+    color: $light-text;
+}
+
+Input:focus {
+    border: solid $orange;
+}
+
+/* Header */
+#header {
+    height: 3;
+    dock: top;
+    background: $dark-bg;
+    border: thick $orange;
+    content-align: center middle;
+}
+
+/* Footer with keyboard shortcuts */
+#footer {
+    height: 1;
+    dock: bottom;
+    background: $dark-bg;
+    color: $info;
+    content-align: center middle;
+}
+
+/* Scrollbars */
+ScrollBar {
+    background: $dark-bg;
+}
+
+ScrollBar:hover {
+    background: $panel-bg;
+}
+
+ScrollBar.-vertical {
+    width: 1;
+}
+
+ScrollBar.-horizontal {
+    height: 1;
+}
+
+/* Loading Indicator */
+LoadingIndicator {
+    background: $dark-bg;
+    color: $orange;
+    content-align: center middle;
+}
+
+/* Buttons */
+Button {
+    background: $orange;
+    color: $dark-bg;
+    border: none;
+    min-width: 10;
+    height: 3;
+}
+
+Button:hover {
+    background: $purple;
+}
+
+Button:focus {
+    border: thick $light-text;
+}
+
+Button.-success {
+    background: $success;
+    color: $dark-bg;
+}
+
+Button.-error {
+    background: $error;
+    color: $light-text;
+}
+
+/* Panels */
+Panel {
+    border: thick $orange;
+    background: $panel-bg;
+    padding: 1;
+}
+
+/* Static Text Widgets */
+Static {
+    background: transparent;
+    color: $light-text;
+}
+
+/* Containers */
+Vertical {
+    background: transparent;
+}
+
+Horizontal {
+    background: transparent;
+}
+
+VerticalScroll {
+    background: transparent;
+}
+
+/* Made with Bob */
