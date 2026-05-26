@@ -278,15 +278,15 @@ Examples:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                     CLI Interface                        │
+│                     CLI Interface                       │
 │  (Rich formatting, pixel art mascot, special commands)  │
 └────────────────┬────────────────────────────────────────┘
                  │
 ┌────────────────▼────────────────────────────────────────┐
-│                   Agent Chat Loop                        │
+│                   Agent Chat Loop                       │
 │  • Intent detection (chat vs log mode)                  │
 │  • Context injection (profile + last 7 days)            │
-│  • Conversation history management                       │
+│  • Conversation history management                      │
 └────┬──────────────────────────────────────────┬─────────┘
      │                                           │
 ┌────▼─────────────┐                  ┌─────────▼─────────┐
