@@ -181,6 +181,46 @@ def main():
                 print("\n\nOnboarding cancelled. Exiting.\n")
                 sys.exit(0)
         
+        # Run ingredient seeding after onboarding (if applicable)
+        from onboarding import IngredientSeeder
+        from agent.llm import LLMClient
+        from vault.reader import get_vault_reader
+        from vault.writer import get_vault_writer
+        
+        seeder = IngredientSeeder(
+            llm_client=LLMClient(),
+            vault_reader=get_vault_reader(),
+            vault_writer=get_vault_writer()
+        )
+        
+        if not seeder.has_known_ingredients() and seeder.has_enough_logs():
+            print(
+                "\n📋 Before we start, let me scan your log history "
+                "to learn your common ingredients."
+            )
+            print(
+                "   This helps me give you more accurate nutritional "
+                "estimates going forward.\n"
+            )
+            
+            response = input(
+                "Scan logs for common ingredients? "
+                "(yes/no, takes ~10 seconds) "
+            ).strip().lower()
+            
+            if response in ['yes', 'y', '']:
+                count = seeder.run()
+                if count > 0:
+                    print(
+                        f"\n✅ Added {count} ingredients to your profile. "
+                        f"I'll use these for accurate tracking going forward.\n"
+                    )
+                else:
+                    print(
+                        "\nNo ingredients added. "
+                        "You can run /seed-ingredients later.\n"
+                    )
+        
         # Initialize vault structure (creates folders if needed)
         try:
             writer = get_vault_writer()

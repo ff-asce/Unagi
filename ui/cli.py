@@ -208,6 +208,9 @@ class CLI:
             return True
         elif command.startswith("/migrate"):
             self.handle_migrate_command(command)
+        elif command == "/seed-ingredients":
+            self.handle_seed_ingredients_command()
+            return True
             return True
         elif command == "/exit" or command == "/quit":
             self.running = False
@@ -341,6 +344,39 @@ class CLI:
         else:
             self.console.print(
                 "\n[cyan]Originals kept. Run '/migrate --cleanup' to delete them later.[/cyan]\n"
+            )
+    
+    def handle_seed_ingredients_command(self):
+        """Handle /seed-ingredients command for ingredient seeding."""
+        from onboarding import IngredientSeeder
+        from agent.llm import LLMClient
+        from vault.reader import get_vault_reader
+        from vault.writer import get_vault_writer
+        
+        seeder = IngredientSeeder(
+            llm_client=LLMClient(),
+            vault_reader=get_vault_reader(),
+            vault_writer=get_vault_writer()
+        )
+        
+        # Check if already seeded
+        if seeder.has_known_ingredients():
+            response = input(
+                "\nYou already have known ingredients. "
+                "Scan for new ones? (yes/no) "
+            ).strip().lower()
+            if response not in ['yes', 'y']:
+                self.console.print("\n[yellow]Cancelled.[/yellow]\n")
+                return
+        
+        count = seeder.run()
+        if count > 0:
+            # Invalidate context cache so new ingredients are
+            # picked up immediately
+            self.context_loader.invalidate()
+            self.console.print(
+                f"\n[green]✅ {count} ingredients added. "
+                f"They'll be used from your next log entry.[/green]\n"
             )
     
     def get_user_input(self) -> Optional[str]:

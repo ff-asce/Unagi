@@ -96,6 +96,7 @@ def get_help_text() -> str:
   /config            Show current configuration
   /migrate           Migrate logs from old Nutrition/ structure
   /migrate --cleanup Delete original files after migration
+  /seed-ingredients  Scan log history for recurring ingredients
   /exit              Quit Unagi
 
 📊 UNDERSTANDING YOUR LOGS
