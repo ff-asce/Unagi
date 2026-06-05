@@ -92,13 +92,11 @@ class Settings:
                 "Get your API key from: https://aistudio.google.com/app/apikey (for Gemini)"
             )
         
-        # Vault root can be empty (will be set during onboarding)
-        # but if set, it should be a valid path
+        # Vault root: only warn if set AND missing — do not block startup
+        # The vault directory will be created by the writer on first use
         if self.vault_root and not Path(self.vault_root).exists():
-            errors.append(
-                f"Vault root path does not exist: {self.vault_root}\n"
-                "Please update config.yaml with a valid path or leave it empty for first-run setup."
-            )
+            print(f"⚠️  Warning: Vault path does not exist yet: {self.vault_root}")
+            print("   It will be created automatically on first log.")
         
         if errors:
             raise ConfigError("\n\n".join(errors))
