@@ -67,10 +67,10 @@ Output rules for log files:
 - The file always ends with: Main View: [[Nutrition Dashboard]]
 
 CRITICAL: When creating or updating log files, you MUST output ONLY valid JSON in this exact format:
-{
+{{
   "action": "create" or "update",
   "date": "YYYY-MM-DD",
-  "data": {
+  "data": {{
     "date": "YYYY-MM-DD",
     "calories": <integer>,
     "maintenance": <integer>,
@@ -84,9 +84,9 @@ CRITICAL: When creating or updating log files, you MUST output ONLY valid JSON i
     "dinner": "<time and description>" or "—",
     "misc": "<description>" or "—",
     "notes": "<full notes string with ● separators>"
-  },
+  }},
   "summary": "<brief summary for user confirmation>"
-}
+}}
 
 For regular chat responses (not logging), respond naturally in plain text.
 

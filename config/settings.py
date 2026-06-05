@@ -78,8 +78,16 @@ class Settings:
         
         # UI configuration
         ui_config = config.get("ui", {})
+        self.ui_mode = ui_config.get("mode", "classic")  # classic | modern
         self.ui_show_mascot = ui_config.get("show_mascot", True)
         self.ui_theme = ui_config.get("theme", "dark")
+        
+        # Modern UI configuration (only used when ui_mode == "modern")
+        modern_config = ui_config.get("modern", {})
+        self.ui_modern_animation_level = modern_config.get("animation_level", "full")  # full | minimal
+        self.ui_modern_stats_panel = modern_config.get("stats_panel", True)
+        self.ui_modern_color_scheme = modern_config.get("color_scheme", "retro")  # retro | classic
+        self.ui_modern_pixel_art_style = modern_config.get("pixel_art_style", True)
     
     def _validate(self):
         """Validate required configuration values."""

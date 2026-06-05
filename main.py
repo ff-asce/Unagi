@@ -15,6 +15,7 @@ def main():
         from vault import get_vault_writer
         from ui import run_cli
         from ui.mascot import get_error_banner
+        from ui.textual_app import UnagiApp
         
         # Load configuration
         try:
@@ -70,9 +71,15 @@ def main():
             print(f"\nFailed to initialize vault structure: {str(e)}\n")
             sys.exit(1)
         
-        # Run the CLI
+        # Run the appropriate UI based on config
         try:
-            run_cli()
+            if settings.ui_mode == "modern":
+                # Run modern Textual UI
+                app = UnagiApp()
+                app.run()
+            else:
+                # Run classic Rich CLI
+                run_cli()
         except KeyboardInterrupt:
             print("\n\nGoodbye! 🐍\n")
             sys.exit(0)
