@@ -209,6 +209,101 @@ class GitManager:
             # Don't raise error for push failures - just log warning
             print(f"Warning: Failed to push to remote: {str(e)}")
             return False
+    def commit_migration(self, report) -> bool:
+        """Commit all migrated files in a single commit.
+        
+        Args:
+            report: MigrationReport with migration results
+            
+        Returns:
+            True if commit successful
+        """
+        if not self.settings.git_enabled:
+            return False
+        
+        try:
+            # Ensure repo is initialized
+            if self.repo is None:
+                self.ensure_repo_initialized()
+                self._init_repo()
+            
+            # Stage all new files in Unagi/ directory
+            git_path = Path(self.settings.git_root)
+            unagi_path = Path(self.settings.vault_root) / "Unagi"
+            rel_path = unagi_path.relative_to(git_path)
+            self.repo.index.add([str(rel_path)])
+            
+            # Create commit message
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            commit_msg = (
+                f"[unagi] migrate: {report.successfully_copied} log files "
+                f"from Nutrition/ → Unagi/ ({date_str})"
+            )
+            
+            # Create author
+            author = Actor(
+                self.settings.git_author_name,
+                self.settings.git_author_email
+            )
+            
+            # Commit
+            self.repo.index.commit(commit_msg, author=author)
+            
+            # Push asynchronously if enabled
+            if self.settings.git_auto_push and self.settings.git_remote_url:
+                push_thread = threading.Thread(
+                    target=self._push_with_feedback,
+                    daemon=True
+                )
+                push_thread.start()
+            
+            return True
+            
+        except Exception as e:
+            print(f"Warning: Migration commit failed: {str(e)}")
+            return False
+    
+    def commit_deletion(self) -> bool:
+        """Commit deletion of original Nutrition/ folder.
+        
+        Returns:
+            True if commit successful
+        """
+        if not self.settings.git_enabled:
+            return False
+        
+        try:
+            if self.repo is None:
+                return False
+            
+            # Stage all deletions
+            self.repo.index.add(update=True)
+            
+            # Create author
+            author = Actor(
+                self.settings.git_author_name,
+                self.settings.git_author_email
+            )
+            
+            # Commit
+            self.repo.index.commit(
+                "[unagi] cleanup: removed original Nutrition/ folder after migration",
+                author=author
+            )
+            
+            # Push asynchronously if enabled
+            if self.settings.git_auto_push and self.settings.git_remote_url:
+                push_thread = threading.Thread(
+                    target=self._push_with_feedback,
+                    daemon=True
+                )
+                push_thread.start()
+            
+            return True
+            
+        except Exception:
+            return False
+    
     
     def get_status(self) -> str:
         """Get git status summary.
