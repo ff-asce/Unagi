@@ -30,7 +30,7 @@ class ChatAgent:
         self.pending_log: Optional[Dict[str, Any]] = None  # Store pending log data for confirmation
     
     def detect_intent(self, user_input: str) -> str:
-        """Detect if user wants to log food or just chat.
+        """Use LLM to classify intent as 'log' or 'chat'.
         
         Args:
             user_input: User's message
@@ -38,27 +38,60 @@ class ChatAgent:
         Returns:
             'log' or 'chat'
         """
-        # Keywords that indicate logging intent
-        log_keywords = [
-            'log', 'ate', 'had', 'consumed', 'food', 'meal',
-            'breakfast', 'lunch', 'dinner', 'snack',
-            'today', 'yesterday', 'update'
-        ]
+        user_lower = user_input.lower().strip()
         
-        user_lower = user_input.lower()
-        
-        # Check for explicit log commands
+        # Fast path: explicit log command
         if user_lower.startswith('log '):
             return 'log'
         
-        # Check for log keywords
-        if any(keyword in user_lower for keyword in log_keywords):
-            # But exclude questions
-            question_words = ['how', 'what', 'when', 'where', 'why', 'should', 'can', 'will', '?']
-            if not any(word in user_lower for word in question_words):
-                return 'log'
+        # Fast path: common food logging phrases
+        log_phrases = [
+            'i ate', 'i had', 'i consumed', 'i drank',
+            'ate ', 'had ', 'consumed ', 'drank ',
+            'breakfast:', 'lunch:', 'dinner:', 'snack:',
+            'today i', 'yesterday i', 'just ate', 'just had'
+        ]
+        if any(user_lower.startswith(phrase) for phrase in log_phrases):
+            return 'log'
         
-        return 'chat'
+        # Fast path: contains quantities (grams, ml, etc.) - likely a log
+        if re.search(r'\d+\s*(g|grams|ml|milliliters|kg|kilograms|oz|ounces|cups?|tbsp|tsp)\b', user_lower):
+            return 'log'
+        
+        # Fast path: explicit question punctuation with no food quantities
+        if user_input.strip().endswith('?'):
+            return 'chat'
+        
+        # LLM classification for ambiguous cases
+        classification_prompt = """You are a classifier. Determine if the user's message is:
+- "log": The user is describing food they ate or want to record (contains food items, quantities, meal times)
+- "chat": The user is asking a question, making a statement, or requesting information/advice
+
+Respond with ONLY the single word: log or chat
+
+Examples:
+"I had 200g chicken and rice for lunch" → log
+"How am I doing this week?" → chat
+"Today I ate 10 almonds and green tea" → log
+"What should I eat tomorrow?" → chat
+"I crushed it today" → chat
+"Update yesterday: forgot to add eggs" → log
+"Am I hitting my protein goal?" → chat"""
+
+        try:
+            response = self.llm.chat(
+                messages=[
+                    {"role": "system", "content": classification_prompt},
+                    {"role": "user", "content": user_input}
+                ],
+                temperature=0,
+                max_tokens=5
+            )
+            intent = response.strip().lower()
+            return 'log' if 'log' in intent else 'chat'
+        except Exception:
+            # Fallback to chat on any error — safer than accidentally logging
+            return 'chat'
     
     def parse_date_reference(self, text: str) -> Optional[datetime]:
         """Parse date references like 'yesterday', 'last Tuesday', etc.
@@ -135,6 +168,54 @@ class ChatAgent:
         except LLMError as e:
             raise ChatError(f"Chat failed: {str(e)}")
     
+    def _extract_json(self, response: str) -> Dict[str, Any]:
+        """Robustly extract JSON from LLM response.
+        
+        Args:
+            response: LLM response text that should contain JSON
+            
+        Returns:
+            Parsed JSON dictionary
+            
+        Raises:
+            ChatError: If JSON cannot be extracted or parsed
+        """
+        # Try direct parse first (JSON mode should give clean JSON)
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError:
+            pass
+        
+        # Strip markdown code fences if present
+        clean = re.sub(r'```(?:json)?\s*', '', response).strip()
+        try:
+            return json.loads(clean)
+        except json.JSONDecodeError:
+            pass
+        
+        # Find JSON object by balanced brace matching
+        start = response.find('{')
+        if start == -1:
+            raise ChatError(
+                f"LLM did not return JSON. Response was:\n{response[:500]}"
+            )
+        
+        depth = 0
+        for i, char in enumerate(response[start:], start):
+            if char == '{':
+                depth += 1
+            elif char == '}':
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(response[start:i+1])
+                    except json.JSONDecodeError as e:
+                        raise ChatError(
+                            f"Malformed JSON from LLM: {e}\nRaw: {response[start:i+1][:300]}"
+                        )
+        
+        raise ChatError(f"Could not find valid JSON in response: {response[:500]}")
+    
     def handle_log(self, user_input: str) -> Tuple[bool, str]:
         """Handle food logging request.
         
@@ -145,8 +226,8 @@ class ChatAgent:
             Tuple of (success: bool, message: str)
         """
         try:
-            # Parse date from input
-            target_date = self.parse_date_reference(user_input)
+            # F-07: Parse date from input as fallback only
+            fallback_date = self.parse_date_reference(user_input)
             
             # Get system prompt with context
             system_prompt = self.context_loader.format_for_llm()
@@ -180,22 +261,24 @@ Do not include any other text. Only output the JSON.
             
             full_prompt = system_prompt + "\n\n" + log_instruction
             
-            # Call LLM
-            response = self.llm.chat_with_system(
-                system_prompt=full_prompt,
-                user_message=user_input,
-                temperature=0.3  # Lower temperature for more consistent output
+            # F-06: Build messages with conversation history
+            messages = [{"role": "system", "content": full_prompt}]
+            if self.conversation_history:
+                messages.extend(self.conversation_history)
+            messages.append({"role": "user", "content": user_input})
+            
+            # Call LLM with JSON mode enabled
+            response = self.llm.chat(
+                messages=messages,
+                temperature=0.3,  # Lower temperature for more consistent output
+                json_mode=True
             )
             
-            # Try to extract JSON from response
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
-            if not json_match:
-                return False, "Could not parse food information. Please try again with more details."
-            
+            # Extract JSON from response
             try:
-                log_data = json.loads(json_match.group())
-            except json.JSONDecodeError:
-                return False, "Could not parse food information. Please try again."
+                log_data = self._extract_json(response)
+            except ChatError as e:
+                return False, str(e)
             
             # Validate JSON structure
             if 'data' not in log_data or 'summary' not in log_data:
@@ -204,6 +287,21 @@ Do not include any other text. Only output the JSON.
             data = log_data['data']
             summary = log_data['summary']
             action = log_data.get('action', 'create')
+            
+            # F-07: Use LLM-resolved date as primary source
+            llm_date_str = log_data.get('date') or data.get('date')
+            
+            if llm_date_str:
+                try:
+                    target_date = datetime.strptime(llm_date_str, "%Y-%m-%d")
+                except ValueError:
+                    target_date = fallback_date  # Fallback if LLM gives bad format
+            else:
+                target_date = fallback_date
+            
+            # Sanity check: warn if LLM date and client parse differ by more than 1 day
+            if abs((target_date - fallback_date).days) > 1:
+                print(f"Note: Using date {target_date.date()} (from your message context)")
             
             # Confirm with user if configured
             if self.settings.agent_confirm_before_write:
@@ -232,6 +330,17 @@ Do not include any other text. Only output the JSON.
                     date=target_date,
                     summary=commit_summary
                 )
+            
+            # F-06: Update conversation history after logging
+            self.conversation_history.append({"role": "user", "content": user_input})
+            self.conversation_history.append({
+                "role": "assistant",
+                "content": f"Logged successfully: {summary}"
+            })
+            
+            # Trim history to last 20 messages
+            if len(self.conversation_history) > 20:
+                self.conversation_history = self.conversation_history[-20:]
             
             # Success message
             date_str = target_date.strftime("%Y-%m-%d")
@@ -327,6 +436,8 @@ Do not include any other text. Only output the JSON.
     def reset_conversation(self):
         """Reset conversation history."""
         self.conversation_history = []
+        # F-17: Clear pending log state on reset
+        self.pending_log = None
     
     def get_conversation_length(self) -> int:
         """Get number of messages in conversation history.

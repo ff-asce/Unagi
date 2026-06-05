@@ -57,20 +57,34 @@ Nutritional reasoning rules:
 - Deficit = calories consumed - maintenance (negative = deficit, positive = surplus)
 
 Output rules for log files:
-- YAML frontmatter fields are bare integers for numbers, quoted strings for text, em dash — for empty
+- YAML frontmatter fields are bare integers for numbers, quoted strings for text, bare — for empty
 - Food descriptions use brand names when known from the user's ingredient list
-- Notes field MUST be ONE CONTINUOUS STRING with NO line breaks - use ● as section separator within the single string
-- Notes format example: "●Macros: P18 C42 F25 Fiber4 ●Micros: Vitamin A: 150mcg, Vitamin C: 22mg, ..."
-- Use status emojis for micronutrients: ✅ (met), ⚠️ (partial), ❌ (deficient)
-- Do NOT add suggestions or insights in notes - ONLY macros and micronutrients data
 - Raw weight is always noted as (r) e.g. "450g Chicken Breast (r)"
 - The file always ends with: Main View: [[Nutrition Dashboard]]
 
+Notes field rules (CRITICAL):
+- The notes field is ONE continuous quoted string — no line breaks inside it
+- Use ● as the section separator between sections
+- Always include these sections in this order when relevant:
+  ● INSIGHTS: Key observations about today's intake and eating pattern
+  ● TRENDS & EFFECTS: How today fits into the user's recent history (reference last 7 days)
+  ● CORRECTIONS: Specific, actionable instructions for tomorrow based on today's gaps
+  ● MICRONUTRIENT STATUS TRACKER: All 29 nutrients in exact order with ✅ ⚠️ ❌
+- Write coaching notes like a knowledgeable, direct sports nutritionist
+- Reference the user's specific goals, history, and known ingredients
+- Be precise — use exact gram amounts and percentages, not vague language
+- The MICRONUTRIENT STATUS TRACKER must always be the last section
+
+Micronutrient status indicators:
+- ✅ = Daily requirement adequately met by today's intake
+- ⚠️ = Partially met or borderline (50-80% of requirement)
+- ❌ = Not met / significantly deficient (<50% of requirement)
+
 CRITICAL: When creating or updating log files, you MUST output ONLY valid JSON in this exact format:
-{
+{{
   "action": "create" or "update",
   "date": "YYYY-MM-DD",
-  "data": {
+  "data": {{
     "date": "YYYY-MM-DD",
     "calories": <integer>,
     "maintenance": <integer>,
@@ -84,9 +98,9 @@ CRITICAL: When creating or updating log files, you MUST output ONLY valid JSON i
     "dinner": "<time and description>" or "—",
     "misc": "<description>" or "—",
     "notes": "<full notes string with ● separators>"
-  },
+  }},
   "summary": "<brief summary for user confirmation>"
-}
+}}
 
 For regular chat responses (not logging), respond naturally in plain text.
 
@@ -102,10 +116,31 @@ Micronutrient tracking order (ALWAYS use this exact order):
         base_prompt += f"Name: {user_profile.get('name', 'Unknown')}\n"
         base_prompt += f"Current Weight: {user_profile.get('current_weight', 'Unknown')} kg\n"
         base_prompt += f"Height: {user_profile.get('height_cm', 'Unknown')} cm\n"
-        base_prompt += f"Age: {user_profile.get('age', 'Unknown')} years\n"
+        
+        # Calculate age from DOB
+        dob_str = user_profile.get('dob')
+        age = 'Unknown'
+        if dob_str:
+            try:
+                dob = datetime.strptime(str(dob_str), "%Y-%m-%d")
+                today_dt = datetime.now()
+                age = today_dt.year - dob.year - (
+                    (today_dt.month, today_dt.day) < (dob.month, dob.day)
+                )
+            except (ValueError, AttributeError):
+                age = 'Unknown'
+        
+        base_prompt += f"Age: {age} years\n"
         base_prompt += f"Gender: {user_profile.get('gender', 'Unknown')}\n"
         base_prompt += f"Maintenance Calories: {user_profile.get('maintenance_calories', 'Unknown')} kcal/day\n"
-        base_prompt += f"Protein Target: {user_profile.get('protein_target_per_kg', 1.3)} g/kg body weight\n"
+        
+        # Calculate protein target
+        weight = user_profile.get('current_weight', 0)
+        protein_per_kg = user_profile.get('protein_target_per_kg', 1.3)
+        protein_target = round(weight * protein_per_kg) if weight else 'Unknown'
+        
+        base_prompt += f"Daily Protein Target: {protein_target}g "
+        base_prompt += f"({protein_per_kg}g × {weight}kg)\n"
         base_prompt += f"Goal: {user_profile.get('goal', 'Unknown')}\n"
         
         # Add known ingredients if available

@@ -346,3 +346,24 @@ rm "/path/to/your/vault/.git/index.lock"
 ---
 
 **Built with 🐍 total food awareness.**
+# 🚀 UNAGI - Quick Start Guide
+
+Get Unagi up and running in 5 minutes!
+
+---
+
+## 📦 For Users with Existing Logs
+
+**If you already have nutrition logs in `Nutrition/Daily Logs/`:**
+
+Unagi will automatically detect your existing logs on first run and offer to migrate them to the new `Unagi/` folder structure. This process is:
+- ✅ **Safe**: Original files are never deleted without your confirmation
+- ✅ **Validated**: Malformed files are flagged but don't block migration
+- ✅ **Automatic**: Dashboard queries are updated automatically
+- ✅ **Git-tracked**: All changes are committed with descriptive messages
+
+**Migration Commands:**
+- `/migrate` - Migrate logs from old structure (or find new files)
+- `/migrate --cleanup` - Delete originals after you've verified everything
+
+---

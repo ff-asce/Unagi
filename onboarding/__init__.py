@@ -6,6 +6,7 @@ from .setup import (
     calculate_tdee,
     OnboardingError
 )
+from .ingredient_seeder import IngredientSeeder
 
 __all__ = [
     "run_onboarding_flow",
@@ -13,6 +14,7 @@ __all__ = [
     "create_user_profile",
     "calculate_tdee",
     "OnboardingError",
+    "IngredientSeeder",
 ]
 
 # Made with Bob

@@ -1,10 +1,14 @@
 """Git operations for Unagi vault."""
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
+import threading
 import git
 from git import Repo, Actor
 from config import get_settings
+
+if TYPE_CHECKING:
+    from config.settings import Settings
 
 
 class GitError(Exception):
@@ -15,9 +19,13 @@ class GitError(Exception):
 class GitManager:
     """Manages git operations for the vault."""
     
-    def __init__(self):
-        """Initialize the git manager with settings."""
-        self.settings = get_settings()
+    def __init__(self, settings: 'Settings'):
+        """Initialize the git manager with settings.
+        
+        Args:
+            settings: Settings instance (injected via container)
+        """
+        self.settings = settings
         self.repo: Optional[Repo] = None
         
         if self.settings.git_enabled:
@@ -26,11 +34,12 @@ class GitManager:
     def _init_repo(self):
         """Initialize or open the git repository."""
         try:
-            vault_path = Path(self.settings.vault_root)
+            # F-13: Use git_root instead of vault_root
+            git_path = Path(self.settings.git_root)
             
             # Check if it's already a git repo
-            if (vault_path / ".git").exists():
-                self.repo = Repo(vault_path)
+            if (git_path / ".git").exists():
+                self.repo = Repo(git_path)
             else:
                 # Not a git repo yet - will be initialized on first commit
                 self.repo = None
@@ -48,19 +57,20 @@ class GitManager:
             GitError: If initialization fails
         """
         try:
-            vault_path = Path(self.settings.vault_root)
+            # F-13: Use git_root instead of vault_root
+            git_path = Path(self.settings.git_root)
             
-            if (vault_path / ".git").exists():
+            if (git_path / ".git").exists():
                 return False
             
-            # Ensure vault directory exists
-            vault_path.mkdir(parents=True, exist_ok=True)
+            # Ensure git directory exists
+            git_path.mkdir(parents=True, exist_ok=True)
             
             # Initialize new repo with explicit path
-            self.repo = Repo.init(str(vault_path))
+            self.repo = Repo.init(str(git_path))
             
             # Create .gitignore for Obsidian
-            gitignore_path = vault_path / ".gitignore"
+            gitignore_path = git_path / ".gitignore"
             if not gitignore_path.exists():
                 with open(gitignore_path, 'w') as f:
                     f.write("# Obsidian\n.obsidian/\n")
@@ -124,8 +134,9 @@ class GitManager:
                 self._init_repo()
             
             # Get relative path from repo root
-            vault_path = Path(self.settings.vault_root)
-            rel_path = file_path.relative_to(vault_path)
+            # F-13: Calculate relative path from git_root
+            git_path = Path(self.settings.git_root)
+            rel_path = file_path.relative_to(git_path)
             
             # Stage the file
             self.repo.index.add([str(rel_path)])
@@ -143,14 +154,27 @@ class GitManager:
             # Commit
             self.repo.index.commit(commit_msg, author=author)
             
-            # Push if auto-push is enabled
+            # F-09: Push asynchronously if auto-push is enabled
             if self.settings.git_auto_push and self.settings.git_remote_url:
-                self.push()
+                push_thread = threading.Thread(
+                    target=self._push_with_feedback,
+                    daemon=True  # Dies with main process if app exits
+                )
+                push_thread.start()
             
             return True
             
         except Exception as e:
             raise GitError(f"Failed to commit file: {str(e)}")
+    
+    def _push_with_feedback(self):
+        """Push to remote in background thread with user feedback."""
+        try:
+            self.push()
+            # Signal success (will be picked up by CLI status bar in future Textual UI)
+            print("\r  📤 Pushed to remote ✓", end="", flush=True)
+        except Exception as e:
+            print(f"\r  ⚠️  Push failed: {str(e)}", end="", flush=True)
     
     def push(self) -> bool:
         """Push commits to remote.
@@ -192,6 +216,101 @@ class GitManager:
             # Don't raise error for push failures - just log warning
             print(f"Warning: Failed to push to remote: {str(e)}")
             return False
+    def commit_migration(self, report) -> bool:
+        """Commit all migrated files in a single commit.
+        
+        Args:
+            report: MigrationReport with migration results
+            
+        Returns:
+            True if commit successful
+        """
+        if not self.settings.git_enabled:
+            return False
+        
+        try:
+            # Ensure repo is initialized
+            if self.repo is None:
+                self.ensure_repo_initialized()
+                self._init_repo()
+            
+            # Stage all new files in Unagi/ directory
+            git_path = Path(self.settings.git_root)
+            unagi_path = Path(self.settings.vault_root) / "Unagi"
+            rel_path = unagi_path.relative_to(git_path)
+            self.repo.index.add([str(rel_path)])
+            
+            # Create commit message
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            commit_msg = (
+                f"[unagi] migrate: {report.successfully_copied} log files "
+                f"from Nutrition/ → Unagi/ ({date_str})"
+            )
+            
+            # Create author
+            author = Actor(
+                self.settings.git_author_name,
+                self.settings.git_author_email
+            )
+            
+            # Commit
+            self.repo.index.commit(commit_msg, author=author)
+            
+            # Push asynchronously if enabled
+            if self.settings.git_auto_push and self.settings.git_remote_url:
+                push_thread = threading.Thread(
+                    target=self._push_with_feedback,
+                    daemon=True
+                )
+                push_thread.start()
+            
+            return True
+            
+        except Exception as e:
+            print(f"Warning: Migration commit failed: {str(e)}")
+            return False
+    
+    def commit_deletion(self) -> bool:
+        """Commit deletion of original Nutrition/ folder.
+        
+        Returns:
+            True if commit successful
+        """
+        if not self.settings.git_enabled:
+            return False
+        
+        try:
+            if self.repo is None:
+                return False
+            
+            # Stage all deletions
+            self.repo.index.add(update=True)
+            
+            # Create author
+            author = Actor(
+                self.settings.git_author_name,
+                self.settings.git_author_email
+            )
+            
+            # Commit
+            self.repo.index.commit(
+                "[unagi] cleanup: removed original Nutrition/ folder after migration",
+                author=author
+            )
+            
+            # Push asynchronously if enabled
+            if self.settings.git_auto_push and self.settings.git_remote_url:
+                push_thread = threading.Thread(
+                    target=self._push_with_feedback,
+                    daemon=True
+                )
+                push_thread.start()
+            
+            return True
+            
+        except Exception:
+            return False
+    
     
     def get_status(self) -> str:
         """Get git status summary.
@@ -252,10 +371,14 @@ def get_git_manager(reload: bool = False) -> GitManager:
         
     Returns:
         GitManager instance
+        
+    Note:
+        This is a convenience wrapper for backward compatibility.
+        New code should use dependency injection via Container.
     """
     global _git_manager
     if _git_manager is None or reload:
-        _git_manager = GitManager()
+        _git_manager = GitManager(get_settings())
     return _git_manager
 
 # Made with Bob
