@@ -75,6 +75,8 @@ class Settings:
         self.git_enabled = git_config.get("enabled", True)
         self.git_branch = git_config.get("branch", "main")
         self.git_auto_push = git_config.get("auto_push", True)
+        # F-13: Independent git root (defaults to vault_root if not set)
+        self.git_root = git_config.get("git_root", "") or self.vault_root
         
         # UI configuration
         ui_config = config.get("ui", {})

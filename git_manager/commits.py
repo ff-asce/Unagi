@@ -2,6 +2,7 @@
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
+import threading
 import git
 from git import Repo, Actor
 from config import get_settings
@@ -26,11 +27,12 @@ class GitManager:
     def _init_repo(self):
         """Initialize or open the git repository."""
         try:
-            vault_path = Path(self.settings.vault_root)
+            # F-13: Use git_root instead of vault_root
+            git_path = Path(self.settings.git_root)
             
             # Check if it's already a git repo
-            if (vault_path / ".git").exists():
-                self.repo = Repo(vault_path)
+            if (git_path / ".git").exists():
+                self.repo = Repo(git_path)
             else:
                 # Not a git repo yet - will be initialized on first commit
                 self.repo = None
@@ -48,19 +50,20 @@ class GitManager:
             GitError: If initialization fails
         """
         try:
-            vault_path = Path(self.settings.vault_root)
+            # F-13: Use git_root instead of vault_root
+            git_path = Path(self.settings.git_root)
             
-            if (vault_path / ".git").exists():
+            if (git_path / ".git").exists():
                 return False
             
-            # Ensure vault directory exists
-            vault_path.mkdir(parents=True, exist_ok=True)
+            # Ensure git directory exists
+            git_path.mkdir(parents=True, exist_ok=True)
             
             # Initialize new repo with explicit path
-            self.repo = Repo.init(str(vault_path))
+            self.repo = Repo.init(str(git_path))
             
             # Create .gitignore for Obsidian
-            gitignore_path = vault_path / ".gitignore"
+            gitignore_path = git_path / ".gitignore"
             if not gitignore_path.exists():
                 with open(gitignore_path, 'w') as f:
                     f.write("# Obsidian\n.obsidian/\n")
@@ -124,8 +127,9 @@ class GitManager:
                 self._init_repo()
             
             # Get relative path from repo root
-            vault_path = Path(self.settings.vault_root)
-            rel_path = file_path.relative_to(vault_path)
+            # F-13: Calculate relative path from git_root
+            git_path = Path(self.settings.git_root)
+            rel_path = file_path.relative_to(git_path)
             
             # Stage the file
             self.repo.index.add([str(rel_path)])
@@ -143,14 +147,27 @@ class GitManager:
             # Commit
             self.repo.index.commit(commit_msg, author=author)
             
-            # Push if auto-push is enabled
+            # F-09: Push asynchronously if auto-push is enabled
             if self.settings.git_auto_push and self.settings.git_remote_url:
-                self.push()
+                push_thread = threading.Thread(
+                    target=self._push_with_feedback,
+                    daemon=True  # Dies with main process if app exits
+                )
+                push_thread.start()
             
             return True
             
         except Exception as e:
             raise GitError(f"Failed to commit file: {str(e)}")
+    
+    def _push_with_feedback(self):
+        """Push to remote in background thread with user feedback."""
+        try:
+            self.push()
+            # Signal success (will be picked up by CLI status bar in future Textual UI)
+            print("\r  📤 Pushed to remote ✓", end="", flush=True)
+        except Exception as e:
+            print(f"\r  ⚠️  Push failed: {str(e)}", end="", flush=True)
     
     def push(self) -> bool:
         """Push commits to remote.
