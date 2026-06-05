@@ -6,6 +6,98 @@ Main entry point for the nutrition agent.
 import sys
 from pathlib import Path
 
+
+def _run_migration_flow(migrator, settings) -> bool:
+    """
+    Run the interactive migration flow.
+    Returns True if migration completed successfully.
+    """
+    from git_manager import get_git_manager
+    
+    print("\nValidating files...")
+    
+    # Dry run first to validate
+    dry_report = migrator.migrate(dry_run=True)
+    
+    if dry_report.has_issues():
+        print(f"\n⚠️  Found issues with {len(dry_report.failed_files)} files:")
+        for f in dry_report.failed_files:
+            print(f"   - {f['path']}: {f['reason']}")
+        print(
+            "\nThese files will be skipped. "
+            "All other files will migrate successfully."
+        )
+        response = input("\nContinue anyway? (yes/no) ").strip().lower()
+        if response not in ['yes', 'y']:
+            print("Migration cancelled.")
+            return False
+    
+    print(f"\nMigrating {dry_report.successfully_copied} files...")
+    
+    # Run actual migration with progress
+    def progress(current, total, filename):
+        bar_len = 30
+        filled = int(bar_len * current / total)
+        bar = '█' * filled + '░' * (bar_len - filled)
+        print(f"\r  [{bar}] {current}/{total} — {filename}",
+              end="", flush=True)
+    
+    report = migrator.migrate(dry_run=False, on_progress=progress)
+    print()  # Newline after progress bar
+    
+    print(f"\n{report.summary()}")
+    
+    # Validate warnings
+    if report.validation_warnings:
+        print(f"\n⚠️  {len(report.validation_warnings)} files migrated "
+              f"with warnings:")
+        for w in report.validation_warnings[:5]:  # Show max 5
+            print(f"   - {w['path']}: {', '.join(w['issues'])}")
+        if len(report.validation_warnings) > 5:
+            print(f"   ... and {len(report.validation_warnings) - 5} more")
+    
+    # Git commit
+    if settings.git_enabled:
+        try:
+            git = get_git_manager()
+            git.commit_migration(report)
+            print("\n✅ Changes committed to Git")
+        except Exception as e:
+            print(f"\n⚠️  Git commit failed: {str(e)}")
+    
+    # Offer to delete originals
+    print(
+        f"\nOriginal files are preserved at: "
+        f"Nutrition/Daily Logs/"
+    )
+    print(
+        "You can delete them once you've verified everything "
+        "looks correct in Obsidian."
+    )
+    response = input(
+        "\nDelete originals now? (yes/no) "
+    ).strip().lower()
+    
+    if response in ['yes', 'y']:
+        if migrator.delete_originals():
+            print("✅ Originals deleted")
+            if settings.git_enabled:
+                try:
+                    git = get_git_manager()
+                    git.commit_deletion()
+                except Exception:
+                    pass
+        else:
+            print("⚠️  Could not delete originals — remove manually if needed")
+    else:
+        print(
+            "\nOriginals kept. Run '/migrate --cleanup' "
+            "to delete them later."
+        )
+    
+    return report.successfully_copied > 0
+
+
 def main():
     """Main entry point for Unagi."""
     try:
@@ -43,6 +135,35 @@ def main():
             print(f"\nVault root does not exist: {settings.vault_root}")
             print("Please create the directory or update config.yaml with the correct path.\n")
             sys.exit(1)
+        
+        # Check for old vault structure and offer migration
+        from migration import VaultMigrator
+        migrator = VaultMigrator(settings.vault_root)
+        detection = migrator.detect()
+        
+        if detection.get("has_old_structure"):
+            count = detection["log_count"]
+            date_range = detection.get("date_range")
+            
+            print(f"\n📁 Found {count} existing log files in old structure")
+            if date_range:
+                start, end = date_range
+                print(
+                    f"   Date range: {start.strftime('%d %b %Y')} → "
+                    f"{end.strftime('%d %b %Y')}"
+                )
+            print(f"\n   These need to be moved to the new Unagi/ folder structure.")
+            print(f"   This is safe — originals won't be deleted until you confirm.\n")
+            
+            response = input("Migrate existing logs now? (yes/no) ").strip().lower()
+            
+            if response in ['yes', 'y']:
+                _run_migration_flow(migrator, settings)
+            else:
+                print(
+                    "\n⚠️  Skipping migration. "
+                    "Run '/migrate' at any time to migrate later.\n"
+                )
         
         # Check if onboarding is needed
         if needs_onboarding():

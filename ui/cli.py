@@ -206,11 +206,142 @@ class CLI:
         elif command == "/config":
             self.show_config()
             return True
+        elif command.startswith("/migrate"):
+            self.handle_migrate_command(command)
+            return True
         elif command == "/exit" or command == "/quit":
             self.running = False
             return True
         
         return False
+    
+    def handle_migrate_command(self, command: str):
+        """Handle /migrate command for vault migration."""
+        from migration import VaultMigrator
+        from git_manager import get_git_manager
+        
+        migrator = VaultMigrator(self.settings.vault_root)
+        
+        # Check for --cleanup flag
+        if '--cleanup' in command:
+            detection = migrator.detect()
+            if not detection.get("has_old_structure"):
+                self.console.print("\n[yellow]No original files to clean up.[/yellow]\n")
+                return
+            
+            self.console.print("\n[yellow]⚠️  This will permanently delete the original Nutrition/ folder.[/yellow]")
+            confirm = input("Delete original Nutrition/ files? (yes/no) ").strip().lower()
+            
+            if confirm in ['yes', 'y']:
+                if migrator.delete_originals():
+                    self.console.print("\n[green]✅ Originals deleted[/green]\n")
+                    if self.settings.git_enabled:
+                        try:
+                            git = get_git_manager()
+                            git.commit_deletion()
+                            self.console.print("[green]✅ Deletion committed to Git[/green]\n")
+                        except Exception as e:
+                            self.console.print(f"[yellow]⚠️  Git commit failed: {str(e)}[/yellow]\n")
+                else:
+                    self.console.print("\n[red]⚠️  Could not delete originals[/red]\n")
+            return
+        
+        # Standard migration
+        detection = migrator.detect()
+        
+        if not detection.get("has_old_structure"):
+            # Check for files added since last migration
+            new_files = migrator.get_files_to_migrate()
+            if new_files:
+                self.console.print(
+                    f"\n[cyan]Found {len(new_files)} new files "
+                    f"not yet in Unagi/Daily Logs/[/cyan]\n"
+                )
+                self._run_migration_flow(migrator)
+            else:
+                self.console.print("\n[green]✅ All files already migrated. Nothing to do.[/green]\n")
+            return
+        
+        # Run migration flow
+        self._run_migration_flow(migrator)
+    
+    def _run_migration_flow(self, migrator):
+        """Run the interactive migration flow."""
+        from git_manager import get_git_manager
+        
+        self.console.print("\n[cyan]Validating files...[/cyan]")
+        
+        # Dry run first to validate
+        dry_report = migrator.migrate(dry_run=True)
+        
+        if dry_report.has_issues():
+            self.console.print(f"\n[yellow]⚠️  Found issues with {len(dry_report.failed_files)} files:[/yellow]")
+            for f in dry_report.failed_files:
+                self.console.print(f"   - {f['path']}: {f['reason']}")
+            self.console.print(
+                "\n[yellow]These files will be skipped. "
+                "All other files will migrate successfully.[/yellow]"
+            )
+            response = input("\nContinue anyway? (yes/no) ").strip().lower()
+            if response not in ['yes', 'y']:
+                self.console.print("\n[yellow]Migration cancelled.[/yellow]\n")
+                return
+        
+        self.console.print(f"\n[cyan]Migrating {dry_report.successfully_copied} files...[/cyan]")
+        
+        # Run actual migration with progress
+        def progress(current, total, filename):
+            bar_len = 30
+            filled = int(bar_len * current / total)
+            bar = '█' * filled + '░' * (bar_len - filled)
+            print(f"\r  [{bar}] {current}/{total} — {filename}",
+                  end="", flush=True)
+        
+        report = migrator.migrate(dry_run=False, on_progress=progress)
+        print()  # Newline after progress bar
+        
+        self.console.print(f"\n{report.summary()}\n")
+        
+        # Show warnings
+        if report.validation_warnings:
+            self.console.print(f"[yellow]⚠️  {len(report.validation_warnings)} files migrated with warnings:[/yellow]")
+            for w in report.validation_warnings[:5]:  # Show max 5
+                self.console.print(f"   - {w['path']}: {', '.join(w['issues'])}")
+            if len(report.validation_warnings) > 5:
+                self.console.print(f"   ... and {len(report.validation_warnings) - 5} more")
+            self.console.print()
+        
+        # Git commit
+        if self.settings.git_enabled:
+            try:
+                git = get_git_manager()
+                git.commit_migration(report)
+                self.console.print("[green]✅ Changes committed to Git[/green]\n")
+            except Exception as e:
+                self.console.print(f"[yellow]⚠️  Git commit failed: {str(e)}[/yellow]\n")
+        
+        # Offer to delete originals
+        self.console.print(
+            "[cyan]Original files are preserved at: Nutrition/Daily Logs/[/cyan]\n"
+            "[cyan]You can delete them once you've verified everything looks correct in Obsidian.[/cyan]"
+        )
+        response = input("\nDelete originals now? (yes/no) ").strip().lower()
+        
+        if response in ['yes', 'y']:
+            if migrator.delete_originals():
+                self.console.print("\n[green]✅ Originals deleted[/green]\n")
+                if self.settings.git_enabled:
+                    try:
+                        git = get_git_manager()
+                        git.commit_deletion()
+                    except Exception:
+                        pass
+            else:
+                self.console.print("\n[red]⚠️  Could not delete originals — remove manually if needed[/red]\n")
+        else:
+            self.console.print(
+                "\n[cyan]Originals kept. Run '/migrate --cleanup' to delete them later.[/cyan]\n"
+            )
     
     def get_user_input(self) -> Optional[str]:
         """Get input from user with prompt.
