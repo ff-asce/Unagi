@@ -170,6 +170,32 @@ def get_settings(reload: bool = False) -> Settings:
     global _settings
     if _settings is None or reload:
         _settings = Settings()
+        # F-20: Reload all dependent singletons when settings are reloaded
+        if reload:
+            _reload_all_singletons()
     return _settings
+
+
+def _reload_all_singletons():
+    """Reload all module singletons after settings change.
+    
+    This ensures that when settings are reloaded (e.g., after update_vault_root()),
+    all dependent modules get the new settings instance.
+    """
+    try:
+        from vault.reader import get_vault_reader
+        from vault.writer import get_vault_writer
+        from agent.llm import get_llm_client
+        from agent.context import get_context_loader
+        from git_manager.commits import get_git_manager
+        
+        get_vault_reader(reload=True)
+        get_vault_writer(reload=True)
+        get_llm_client(reload=True)
+        get_context_loader(reload=True)
+        get_git_manager(reload=True)
+    except ImportError:
+        # Module not yet initialized - this is fine
+        pass
 
 # Made with Bob

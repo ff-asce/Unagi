@@ -420,6 +420,8 @@ Do not include any other text. Only output the JSON.
     def reset_conversation(self):
         """Reset conversation history."""
         self.conversation_history = []
+        # F-17: Clear pending log state on reset
+        self.pending_log = None
     
     def get_conversation_length(self) -> int:
         """Get number of messages in conversation history.
