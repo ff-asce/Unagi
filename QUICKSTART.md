@@ -141,9 +141,47 @@ vault:
 
 ## 🎯 Step 4: Run Unagi
 
+### Option 1: Cross-Platform Launcher (Recommended)
+
+Works on all operating systems without activating venv:
+
 ```bash
-python main.py
+# macOS/Linux
+python3 unagi.py
+python3 unagi.py --simple  # Use simple CLI mode
+
+# Windows
+python unagi.py
+python unagi.py --simple   # Use simple CLI mode
 ```
+
+### Option 2: Platform-Specific Scripts
+
+**macOS/Linux:**
+```bash
+./run.sh              # Run with TUI
+./run.sh --simple     # Run with simple CLI
+```
+
+**Windows:**
+```cmd
+run.bat              # Run with TUI
+run.bat --simple     # Run with simple CLI
+```
+
+### Option 3: Manual Activation
+
+```bash
+# Activate virtual environment
+source venv/bin/activate  # macOS/Linux
+venv\Scripts\activate     # Windows
+
+# Run UNAGI
+python main.py            # Run with TUI
+python main.py --simple   # Run with simple CLI
+```
+
+### First Run
 
 On first run, you'll go through onboarding:
 - Enter your name
@@ -249,6 +287,30 @@ You > /exit
 ║         Stay aware. Stay healthy. Stay strong.           ║
 ╚═══════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## 🎨 UI Modes
+
+UNAGI now supports two interface modes:
+
+### 🖥️ TUI Mode (Default)
+Modern terminal UI with fixed layout, real-time updates, and split panels:
+- Fixed header and stats bar (don't scroll away)
+- Split view: Chat (70%) + Today's summary (30%)
+- Real-time status updates during LLM calls
+- Keyboard shortcuts (Ctrl+C to exit, Ctrl+R to refresh)
+- Responsive design (adapts to terminal width)
+
+**Run with:** `python3 unagi.py` (or `./run.sh` on macOS/Linux)
+
+### 📝 Simple CLI Mode (Fallback)
+Traditional scrolling CLI interface:
+- Simpler, more compatible
+- Works in any terminal
+- Good for debugging or restricted environments
+
+**Run with:** `python3 unagi.py --simple` (or `./run.sh --simple`)
 
 ---
 

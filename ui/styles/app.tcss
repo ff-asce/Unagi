@@ -1,0 +1,115 @@
+/* Unagi Terminal Styles */
+
+Screen {
+    background: #0d1117;
+}
+
+#header {
+    height: 3;
+    background: #161b22;
+    border-bottom: solid #30363d;
+    color: #e6edf3;
+}
+
+#stats {
+    height: 2;
+    background: #0d1117;
+    border-bottom: solid #30363d;
+    padding: 0 2;
+    color: #7d8590;
+}
+
+#main-body {
+    height: 1fr;
+}
+
+#chat {
+    width: 2fr;
+    border-right: solid #30363d;
+    padding: 1 2;
+}
+
+#today {
+    width: 1fr;
+    padding: 1 2;
+    color: #e6edf3;
+}
+
+#chat-input {
+    height: 3;
+    border-top: solid #30363d;
+    border: solid #30363d;
+    background: #161b22;
+    color: #e6edf3;
+    padding: 0 2;
+}
+
+#chat-input:focus {
+    border: solid #58a6ff;
+}
+
+#status {
+    height: 1;
+    background: #161b22;
+    border-top: solid #30363d;
+    color: #7d8590;
+    padding: 0 2;
+}
+
+/* Message styles */
+.user-message {
+    color: #e6edf3;
+    margin: 1 0;
+}
+
+.agent-message {
+    color: #e6edf3;
+    margin: 1 0;
+}
+
+.agent-label {
+    color: #bc8cff;
+    text-style: bold;
+}
+
+.success-panel {
+    border: solid #3fb950;
+    background: #0d1f0d;
+    padding: 1 2;
+    margin: 1 0;
+    color: #e6edf3;
+}
+
+.warning-panel {
+    border: solid #d29922;
+    background: #1f1a0d;
+    padding: 1 2;
+    margin: 1 0;
+}
+
+.error-panel {
+    border: solid #f85149;
+    background: #1f0d0d;
+    padding: 1 2;
+    margin: 1 0;
+}
+
+.metric-good {
+    color: #3fb950;
+}
+
+.metric-warning {
+    color: #d29922;
+}
+
+.metric-bad {
+    color: #f85149;
+}
+
+.muted {
+    color: #7d8590;
+}
+
+.section-divider {
+    color: #30363d;
+}

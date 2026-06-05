@@ -102,6 +102,17 @@ def _run_migration_flow(migrator, settings, git_manager) -> bool:
 
 def main():
     """Main entry point for Unagi."""
+    import argparse
+    
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='UNAGI - Total Food Awareness')
+    parser.add_argument(
+        '--simple',
+        action='store_true',
+        help='Use simple CLI mode instead of TUI (for compatibility)'
+    )
+    args = parser.parse_args()
+    
     try:
         # Import modules
         from config import get_settings, ConfigError
@@ -233,9 +244,16 @@ def main():
             print(f"\nFailed to initialize vault structure: {str(e)}\n")
             sys.exit(1)
         
-        # Run the CLI with container
+        # Run the UI (TUI or simple CLI based on flag)
         try:
-            run_cli(container)
+            if args.simple:
+                # Use simple CLI mode
+                run_cli(container)
+            else:
+                # Use Textual TUI mode
+                from ui.app import create_tui
+                tui = create_tui(container)
+                tui.run()
         except KeyboardInterrupt:
             print("\n\nGoodbye! 🐍\n")
             sys.exit(0)
