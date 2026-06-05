@@ -135,6 +135,54 @@ class ChatAgent:
         except LLMError as e:
             raise ChatError(f"Chat failed: {str(e)}")
     
+    def _extract_json(self, response: str) -> Dict[str, Any]:
+        """Robustly extract JSON from LLM response.
+        
+        Args:
+            response: LLM response text that should contain JSON
+            
+        Returns:
+            Parsed JSON dictionary
+            
+        Raises:
+            ChatError: If JSON cannot be extracted or parsed
+        """
+        # Try direct parse first (JSON mode should give clean JSON)
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError:
+            pass
+        
+        # Strip markdown code fences if present
+        clean = re.sub(r'```(?:json)?\s*', '', response).strip()
+        try:
+            return json.loads(clean)
+        except json.JSONDecodeError:
+            pass
+        
+        # Find JSON object by balanced brace matching
+        start = response.find('{')
+        if start == -1:
+            raise ChatError(
+                f"LLM did not return JSON. Response was:\n{response[:500]}"
+            )
+        
+        depth = 0
+        for i, char in enumerate(response[start:], start):
+            if char == '{':
+                depth += 1
+            elif char == '}':
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(response[start:i+1])
+                    except json.JSONDecodeError as e:
+                        raise ChatError(
+                            f"Malformed JSON from LLM: {e}\nRaw: {response[start:i+1][:300]}"
+                        )
+        
+        raise ChatError(f"Could not find valid JSON in response: {response[:500]}")
+    
     def handle_log(self, user_input: str) -> Tuple[bool, str]:
         """Handle food logging request.
         
@@ -180,22 +228,21 @@ Do not include any other text. Only output the JSON.
             
             full_prompt = system_prompt + "\n\n" + log_instruction
             
-            # Call LLM
-            response = self.llm.chat_with_system(
-                system_prompt=full_prompt,
-                user_message=user_input,
-                temperature=0.3  # Lower temperature for more consistent output
+            # Call LLM with JSON mode enabled
+            response = self.llm.chat(
+                messages=[
+                    {"role": "system", "content": full_prompt},
+                    {"role": "user", "content": user_input}
+                ],
+                temperature=0.3,  # Lower temperature for more consistent output
+                json_mode=True
             )
             
-            # Try to extract JSON from response
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
-            if not json_match:
-                return False, "Could not parse food information. Please try again with more details."
-            
+            # Extract JSON from response
             try:
-                log_data = json.loads(json_match.group())
-            except json.JSONDecodeError:
-                return False, "Could not parse food information. Please try again."
+                log_data = self._extract_json(response)
+            except ChatError as e:
+                return False, str(e)
             
             # Validate JSON structure
             if 'data' not in log_data or 'summary' not in log_data:

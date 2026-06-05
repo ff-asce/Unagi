@@ -1,5 +1,6 @@
 """Parser for Obsidian markdown files with YAML frontmatter."""
 from typing import Dict, Any, Optional
+import re
 import frontmatter
 from pathlib import Path
 
@@ -132,6 +133,12 @@ def format_log_data(data: Dict[str, Any]) -> str:
     Returns:
         Formatted markdown string
     """
+    # Normalize date field to string if it's a datetime object
+    if 'date' in data:
+        from datetime import datetime, date
+        if isinstance(data['date'], (datetime, date)):
+            data['date'] = data['date'].strftime("%Y-%m-%d")
+    
     # Validate data first
     validate_log_data(data)
     
@@ -200,10 +207,14 @@ def merge_log_data(existing: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, A
             # If new is empty or em dash, keep existing
             elif new_value == '—' or not new_value:
                 merged[field] = existing_value
-            # Both have values - this shouldn't happen in normal flow
-            # but if it does, prefer new value
+            # Both have values - need to merge intelligently
             else:
-                merged[field] = new_value
+                # If new value looks like a complete replacement (contains time), use new
+                # If new value looks like an addition (no time marker), append
+                if re.match(r'\d{2}:\d{2}', new_value):
+                    merged[field] = new_value  # Complete new entry with time
+                else:
+                    merged[field] = f"{existing_value}; {new_value}"  # Append addition
     
     # Notes are always regenerated, so use new if provided
     if 'notes' in new:

@@ -30,7 +30,8 @@ class LLMClient:
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
-        stream: bool = False
+        stream: bool = False,
+        json_mode: bool = False
     ) -> str:
         """Send a chat completion request to the LLM.
         
@@ -39,6 +40,7 @@ class LLMClient:
             temperature: Sampling temperature (0-2)
             max_tokens: Maximum tokens to generate
             stream: Whether to stream the response
+            json_mode: If True, request JSON output format
             
         Returns:
             The assistant's response text
@@ -48,13 +50,18 @@ class LLMClient:
         """
         for attempt in range(self.max_retries):
             try:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    stream=stream
-                )
+                kwargs = {
+                    "model": self.model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "stream": stream
+                }
+                if max_tokens:
+                    kwargs["max_tokens"] = max_tokens
+                if json_mode:
+                    kwargs["response_format"] = {"type": "json_object"}
+                
+                response = self.client.chat.completions.create(**kwargs)
                 
                 if stream:
                     # For streaming, return the full response after collecting chunks
