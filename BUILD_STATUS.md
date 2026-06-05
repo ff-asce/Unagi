@@ -1,18 +1,23 @@
 # 🐍 UNAGI v1 - Build Status Report
 
-**Date:** 2026-05-25  
-**Status:** 🟡 Core Infrastructure Complete (~60% Done)  
-**Next Phase:** Agent Logic & UI Implementation
+**Date:** 2026-06-05
+**Status:** 🟢 Core Features Complete + Migration (~75% Done)
+**Next Phase:** Ingredient Seeding & Architectural Refactor
 
 ---
 
 ## 📊 Progress Summary
 
-### Overall Completion: 10/18 Tasks (56%)
+### Overall Completion: 13/18 Tasks (72%)
 
-✅ **Completed:** 10 tasks  
-🚧 **In Progress:** 0 tasks  
-⏳ **Pending:** 8 tasks
+✅ **Completed:** 13 tasks
+🚧 **In Progress:** 0 tasks
+⏳ **Pending:** 5 tasks
+
+**Recent Additions:**
+- ✅ FIX_SPEC_v1: All 20 fixes implemented and tested
+- ✅ Intent detection bug fix (fast-path patterns)
+- ✅ FEAT_SPEC_v1_migration: Complete vault migration system
 
 ---
 
@@ -165,6 +170,38 @@ unagi/
 - `GitManager` - Main git interface
 - `GitError` - Git exception
 - `get_git_manager()` - Global manager accessor
+
+### 5.5. Vault Migration (100% Complete)
+
+**Files:**
+- ✅ `migration/migrator.py` (396 lines)
+- ✅ `migration/__init__.py` (4 lines)
+- ✅ `test_migration.py` (227 lines)
+
+**Features:**
+- Auto-detection of old `Nutrition/Daily Logs/` structure on startup
+- Safe migration to new `Unagi/Daily Logs/` structure
+- File validation before migration (catches malformed files)
+- Dashboard Dataview query patching
+- Git integration (migration commits + deletion commits)
+- Progress bars during migration
+- `/migrate` command for manual migration
+- `/migrate --cleanup` for safe deletion of originals
+- Incremental migration (finds new files since last migration)
+- Dry run support for testing
+- Comprehensive test suite (5 test suites, all passing)
+
+**Key Classes:**
+- `VaultMigrator` - Main migration engine
+- `MigrationReport` - Tracks migration results
+- `MigrationError` - Migration exception
+
+**Integration Points:**
+- `main.py`: Auto-detection before onboarding
+- `ui/cli.py`: `/migrate` command handler
+- `git_manager/commits.py`: Migration commit methods
+- `ui/mascot.py`: Updated help text
+
 
 ### 6. Onboarding Flow (100% Complete)
 
