@@ -1,11 +1,15 @@
 """Writer for vault files (daily logs and user profile)."""
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, TYPE_CHECKING
 from datetime import datetime
 from config import get_settings
 from .parser import format_log_data, merge_log_data, validate_log_data
 from .reader import get_vault_reader
 import yaml
+
+if TYPE_CHECKING:
+    from config.settings import Settings
+    from vault.reader import VaultReader
 
 
 class WriteError(Exception):
@@ -16,10 +20,15 @@ class WriteError(Exception):
 class VaultWriter:
     """Writes data to the Obsidian vault."""
     
-    def __init__(self):
-        """Initialize the vault writer with settings."""
-        self.settings = get_settings()
-        self.reader = get_vault_reader()
+    def __init__(self, settings: 'Settings', reader: 'VaultReader'):
+        """Initialize the vault writer with settings and reader.
+        
+        Args:
+            settings: Settings instance (injected via container)
+            reader: VaultReader instance (injected via container)
+        """
+        self.settings = settings
+        self.reader = reader
     
     def write_daily_log(
         self,
@@ -228,10 +237,14 @@ def get_vault_writer(reload: bool = False) -> VaultWriter:
         
     Returns:
         VaultWriter instance
+        
+    Note:
+        This is a convenience wrapper for backward compatibility.
+        New code should use dependency injection via Container.
     """
     global _vault_writer
     if _vault_writer is None or reload:
-        _vault_writer = VaultWriter()
+        _vault_writer = VaultWriter(get_settings(), get_vault_reader())
     return _vault_writer
 
 # Made with Bob

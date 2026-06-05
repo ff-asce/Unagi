@@ -1,17 +1,24 @@
 """Reader for vault files (user profile and daily logs)."""
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
 from datetime import datetime, timedelta
 from config import get_settings
 from .parser import parse_log_file, parse_user_profile, ParseError
+
+if TYPE_CHECKING:
+    from config.settings import Settings
 
 
 class VaultReader:
     """Reads data from the Obsidian vault."""
     
-    def __init__(self):
-        """Initialize the vault reader with settings."""
-        self.settings = get_settings()
+    def __init__(self, settings: 'Settings'):
+        """Initialize the vault reader with settings.
+        
+        Args:
+            settings: Settings instance (injected via container)
+        """
+        self.settings = settings
     
     def read_user_profile(self) -> Optional[Dict[str, Any]]:
         """Read the user profile file.
@@ -188,10 +195,14 @@ def get_vault_reader(reload: bool = False) -> VaultReader:
         
     Returns:
         VaultReader instance
+        
+    Note:
+        This is a convenience wrapper for backward compatibility.
+        New code should use dependency injection via Container.
     """
     global _vault_reader
     if _vault_reader is None or reload:
-        _vault_reader = VaultReader()
+        _vault_reader = VaultReader(get_settings())
     return _vault_reader
 
 # Made with Bob

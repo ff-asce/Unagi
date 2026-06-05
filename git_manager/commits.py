@@ -1,11 +1,14 @@
 """Git operations for Unagi vault."""
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 import threading
 import git
 from git import Repo, Actor
 from config import get_settings
+
+if TYPE_CHECKING:
+    from config.settings import Settings
 
 
 class GitError(Exception):
@@ -16,9 +19,13 @@ class GitError(Exception):
 class GitManager:
     """Manages git operations for the vault."""
     
-    def __init__(self):
-        """Initialize the git manager with settings."""
-        self.settings = get_settings()
+    def __init__(self, settings: 'Settings'):
+        """Initialize the git manager with settings.
+        
+        Args:
+            settings: Settings instance (injected via container)
+        """
+        self.settings = settings
         self.repo: Optional[Repo] = None
         
         if self.settings.git_enabled:
@@ -364,10 +371,14 @@ def get_git_manager(reload: bool = False) -> GitManager:
         
     Returns:
         GitManager instance
+        
+    Note:
+        This is a convenience wrapper for backward compatibility.
+        New code should use dependency injection via Container.
     """
     global _git_manager
     if _git_manager is None or reload:
-        _git_manager = GitManager()
+        _git_manager = GitManager(get_settings())
     return _git_manager
 
 # Made with Bob

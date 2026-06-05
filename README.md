@@ -29,10 +29,11 @@ unagi/
 ├── agent/              # AI agent logic
 ├── vault/              # Obsidian file management
 ├── git_manager/        # Git operations
+├── migration/          # Vault migration utilities
 ├── onboarding/         # First-run setup
 ├── config/             # Configuration management
-├── ui/                 # CLI interface (pending)
-├── main.py             # Entry point (pending)
+├── ui/                 # CLI interface
+├── main.py             # Entry point
 ├── requirements.txt    # Dependencies
 ├── config.yaml         # Non-secret settings
 ├── .env.example        # Environment template
@@ -86,6 +87,17 @@ unagi/
   - Push to remote (optional)
   - Status checking
   - Error handling
+
+#### 5.5. **Vault Migration** (`migration/`)
+- ✅ `migrator.py` - Migrate from old Nutrition/ structure to new Unagi/ structure
+  - Detect old vault structure automatically
+  - Validate all log files before migration
+  - Copy files safely (never deletes originals without confirmation)
+  - Patch Dataview dashboard queries
+  - Git integration for migration commits
+  - Incremental migration (finds new files)
+  - `/migrate` command for manual migration
+  - `/migrate --cleanup` for safe deletion of originals
 
 #### 6. **Onboarding** (`onboarding/`)
 - ✅ `setup.py` - First-run flow

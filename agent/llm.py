@@ -1,8 +1,11 @@
 """LLM client for Unagi using OpenAI-compatible API."""
 import time
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TYPE_CHECKING
 from openai import OpenAI
 from config import get_settings
+
+if TYPE_CHECKING:
+    from config.settings import Settings
 
 
 class LLMError(Exception):
@@ -13,10 +16,12 @@ class LLMError(Exception):
 class LLMClient:
     """OpenAI-compatible LLM client supporting multiple backends."""
     
-    def __init__(self):
-        """Initialize the LLM client with settings."""
-        settings = get_settings()
+    def __init__(self, settings: 'Settings'):
+        """Initialize the LLM client with settings.
         
+        Args:
+            settings: Settings instance (injected via container)
+        """
         self.client = OpenAI(
             api_key=settings.llm_api_key,
             base_url=settings.llm_base_url
@@ -109,7 +114,8 @@ class LLMClient:
         system_prompt: str,
         user_message: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        json_mode: bool = False
     ) -> str:
         """Send a chat request with system prompt and conversation history.
         
@@ -118,6 +124,7 @@ class LLMClient:
             user_message: Current user message
             conversation_history: Previous messages in the conversation
             temperature: Sampling temperature
+            json_mode: If True, request JSON output format
             
         Returns:
             The assistant's response text
@@ -131,7 +138,7 @@ class LLMClient:
         # Add current user message
         messages.append({"role": "user", "content": user_message})
         
-        return self.chat(messages, temperature=temperature)
+        return self.chat(messages, temperature=temperature, json_mode=json_mode)
     
     def test_connection(self) -> bool:
         """Test if the LLM connection is working.
@@ -164,10 +171,14 @@ def get_llm_client(reload: bool = False) -> LLMClient:
         
     Returns:
         LLMClient instance
+        
+    Note:
+        This is a convenience wrapper for backward compatibility.
+        New code should use dependency injection via Container.
     """
     global _llm_client
     if _llm_client is None or reload:
-        _llm_client = LLMClient()
+        _llm_client = LLMClient(get_settings())
     return _llm_client
 
 # Made with Bob

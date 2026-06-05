@@ -7,12 +7,16 @@ import sys
 from pathlib import Path
 
 
-def _run_migration_flow(migrator, settings) -> bool:
+def _run_migration_flow(migrator, settings, git_manager) -> bool:
     """
     Run the interactive migration flow.
     Returns True if migration completed successfully.
+    
+    Args:
+        migrator: VaultMigrator instance
+        settings: Settings instance
+        git_manager: GitManager instance from container
     """
-    from git_manager import get_git_manager
     
     print("\nValidating files...")
     
@@ -59,8 +63,7 @@ def _run_migration_flow(migrator, settings) -> bool:
     # Git commit
     if settings.git_enabled:
         try:
-            git = get_git_manager()
-            git.commit_migration(report)
+            git_manager.commit_migration(report)
             print("\n✅ Changes committed to Git")
         except Exception as e:
             print(f"\n⚠️  Git commit failed: {str(e)}")
@@ -83,8 +86,7 @@ def _run_migration_flow(migrator, settings) -> bool:
             print("✅ Originals deleted")
             if settings.git_enabled:
                 try:
-                    git = get_git_manager()
-                    git.commit_deletion()
+                    git_manager.commit_deletion()
                 except Exception:
                     pass
         else:
@@ -103,8 +105,8 @@ def main():
     try:
         # Import modules
         from config import get_settings, ConfigError
+        from agent.container import create_container
         from onboarding import needs_onboarding, run_onboarding_flow, OnboardingError
-        from vault import get_vault_writer
         from ui import run_cli
         from ui.mascot import get_error_banner
         
@@ -136,6 +138,10 @@ def main():
             print("Please create the directory or update config.yaml with the correct path.\n")
             sys.exit(1)
         
+        # Create dependency injection container early
+        # (needed for migration and onboarding flows)
+        container = create_container()
+        
         # Check for old vault structure and offer migration
         from migration import VaultMigrator
         migrator = VaultMigrator(settings.vault_root)
@@ -158,7 +164,7 @@ def main():
             response = input("Migrate existing logs now? (yes/no) ").strip().lower()
             
             if response in ['yes', 'y']:
-                _run_migration_flow(migrator, settings)
+                _run_migration_flow(migrator, settings, container.git_manager)
             else:
                 print(
                     "\n⚠️  Skipping migration. "
@@ -183,14 +189,11 @@ def main():
         
         # Run ingredient seeding after onboarding (if applicable)
         from onboarding import IngredientSeeder
-        from agent.llm import LLMClient
-        from vault.reader import get_vault_reader
-        from vault.writer import get_vault_writer
         
         seeder = IngredientSeeder(
-            llm_client=LLMClient(),
-            vault_reader=get_vault_reader(),
-            vault_writer=get_vault_writer()
+            llm_client=container.llm_client,
+            vault_reader=container.vault_reader,
+            vault_writer=container.vault_writer
         )
         
         if not seeder.has_known_ingredients() and seeder.has_enough_logs():
@@ -223,17 +226,16 @@ def main():
         
         # Initialize vault structure (creates folders if needed)
         try:
-            writer = get_vault_writer()
-            writer._ensure_vault_structure()
-            writer.create_dashboard_if_missing()
+            container.vault_writer._ensure_vault_structure()
+            container.vault_writer.create_dashboard_if_missing()
         except Exception as e:
             print(get_error_banner("Vault"))
             print(f"\nFailed to initialize vault structure: {str(e)}\n")
             sys.exit(1)
         
-        # Run the CLI
+        # Run the CLI with container
         try:
-            run_cli()
+            run_cli(container)
         except KeyboardInterrupt:
             print("\n\nGoodbye! 🐍\n")
             sys.exit(0)

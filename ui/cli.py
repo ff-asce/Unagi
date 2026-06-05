@@ -1,12 +1,11 @@
 """CLI interface for Unagi using Rich for formatting."""
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.markdown import Markdown
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
-from agent import get_chat_agent, get_context_loader
 from config import get_settings
 from .mascot import (
     get_startup_banner,
@@ -15,36 +14,81 @@ from .mascot import (
     get_error_banner
 )
 
+if TYPE_CHECKING:
+    from agent.container import Container
+    from agent.events import PipelineEvent
+
 
 class CLI:
     """Command-line interface for Unagi."""
     
-    def __init__(self):
-        """Initialize the CLI."""
+    def __init__(self, container: "Container"):
+        """Initialize the CLI.
+        
+        Args:
+            container: Dependency injection container with all components
+        """
         self.console = Console()
         self.settings = get_settings()
-        self.agent = get_chat_agent()
-        self.context_loader = get_context_loader()
+        self.container = container
+        self.orchestrator = container.orchestrator
+        self.context_manager = container.context_manager
         self.session = PromptSession(history=InMemoryHistory())
         self.running = False
+        
+        # Subscribe to pipeline events for progress updates
+        self._subscribe_to_events()
+    
+    def _subscribe_to_events(self):
+        """Subscribe to pipeline events for UI updates."""
+        def on_event(event: "PipelineEvent", data: Dict[str, Any]):
+            """Handle pipeline events."""
+            from agent.events import PipelineEvent
+            
+            if event == PipelineEvent.INTENT_CLASSIFIED:
+                intent = data.get("intent", "unknown")
+                self.console.print(f"[dim]→ Intent: {intent}[/dim]")
+            elif event == PipelineEvent.DATE_RESOLVED:
+                date = data.get("date", "unknown")
+                self.console.print(f"[dim]→ Date: {date}[/dim]")
+            elif event == PipelineEvent.CONTEXT_LOADED:
+                self.console.print("[dim]→ Context loaded[/dim]")
+            elif event == PipelineEvent.LLM_PROCESSING:
+                self.console.print("[dim]→ Processing with LLM...[/dim]")
+            elif event == PipelineEvent.ENTRY_CREATED:
+                path = data.get("path", "unknown")
+                self.console.print(f"[dim]→ Entry created: {path}[/dim]")
+            elif event == PipelineEvent.GIT_COMMITTED:
+                self.console.print("[dim]→ Changes committed to Git[/dim]")
+            elif event == PipelineEvent.ERROR:
+                error = data.get("error", "Unknown error")
+                self.console.print(f"[red]→ Error: {error}[/red]")
+        
+        self.container.event_bus.subscribe(on_event)
     
     def show_startup(self):
         """Display startup screen with mascot."""
         if self.settings.ui_show_mascot:
             # Get user info for personalized greeting
-            profile = self.context_loader.load_user_profile()
-            user_name = profile.get('name') if profile else None
+            context = self.context_manager.get_context()
+            user_name = context.profile.get('name') if context.profile else None
             
             # Get last log info
-            today_log = self.context_loader.get_today_summary()
+            today_log = None
+            if context.recent_logs:
+                # Check if first log is today
+                from datetime import date
+                first_log = context.recent_logs[0]
+                if first_log.get('date') == str(date.today()):
+                    today_log = first_log
+            
             if today_log:
                 last_log = f"Last log: Today — {today_log.get('calories', 0)} kcal"
+            elif context.recent_logs:
+                first_log = context.recent_logs[0]
+                last_log = f"Last log: {first_log.get('date', 'Unknown')} — {first_log.get('calories', 0)} kcal | Deficit: {first_log.get('deficit', 0)}"
             else:
-                logs = self.context_loader.load_recent_logs(1)
-                if logs:
-                    last_log = f"Last log: {logs[0].get('date', 'Unknown')} — {logs[0].get('calories', 0)} kcal | Deficit: {logs[0].get('deficit', 0)}"
-                else:
-                    last_log = None
+                last_log = None
             
             banner = get_startup_banner(user_name, last_log)
             self.console.print(banner, style="cyan")
@@ -89,7 +133,17 @@ class CLI:
     
     def show_today_summary(self):
         """Display today's log summary."""
-        today_log = self.context_loader.get_today_summary()
+        from datetime import date
+        context = self.context_manager.get_context()
+        
+        # Find today's log
+        today_log = None
+        today_str = str(date.today())
+        if context.recent_logs:
+            for log in context.recent_logs:
+                if log.get('date') == today_str:
+                    today_log = log
+                    break
         
         if not today_log:
             self.console.print("\n[yellow]No log for today yet.[/yellow]\n")
@@ -113,11 +167,32 @@ class CLI:
     
     def show_week_summary(self):
         """Display last 7 days summary."""
-        weekly = self.context_loader.get_weekly_summary()
+        from datetime import date, timedelta
+        context = self.context_manager.get_context()
         
-        if weekly['days'] == 0:
+        # Calculate weekly stats from recent logs
+        week_ago = date.today() - timedelta(days=7)
+        week_logs = [
+            log for log in context.logs
+            if log.get('date') and date.fromisoformat(log['date']) >= week_ago
+        ]
+        
+        if not week_logs:
             self.console.print("\n[yellow]No logs found for the past week.[/yellow]\n")
             return
+        
+        # Calculate averages
+        total_calories = sum(log.get('calories', 0) for log in week_logs)
+        total_protein = sum(log.get('protein', 0) for log in week_logs)
+        total_deficit = sum(log.get('deficit', 0) for log in week_logs)
+        
+        weekly = {
+            'days': len(week_logs),
+            'avg_calories': int(total_calories / len(week_logs)),
+            'avg_protein': int(total_protein / len(week_logs)),
+            'avg_deficit': int(total_deficit / len(week_logs)),
+            'total_deficit': total_deficit
+        }
         
         table = Table(title="Weekly Summary (Last 7 Days)", show_header=True, header_style="bold cyan")
         table.add_column("Metric", style="cyan")
@@ -135,7 +210,8 @@ class CLI:
     
     def show_profile(self):
         """Display user profile."""
-        profile = self.context_loader.load_user_profile()
+        context = self.context_manager.get_context()
+        profile = context.profile
         
         if not profile:
             self.console.print("\n[yellow]User profile not found.[/yellow]\n")
@@ -221,7 +297,6 @@ class CLI:
     def handle_migrate_command(self, command: str):
         """Handle /migrate command for vault migration."""
         from migration import VaultMigrator
-        from git_manager import get_git_manager
         
         migrator = VaultMigrator(self.settings.vault_root)
         
@@ -240,8 +315,7 @@ class CLI:
                     self.console.print("\n[green]✅ Originals deleted[/green]\n")
                     if self.settings.git_enabled:
                         try:
-                            git = get_git_manager()
-                            git.commit_deletion()
+                            self.container.git_manager.commit_deletion()
                             self.console.print("[green]✅ Deletion committed to Git[/green]\n")
                         except Exception as e:
                             self.console.print(f"[yellow]⚠️  Git commit failed: {str(e)}[/yellow]\n")
@@ -270,7 +344,6 @@ class CLI:
     
     def _run_migration_flow(self, migrator):
         """Run the interactive migration flow."""
-        from git_manager import get_git_manager
         
         self.console.print("\n[cyan]Validating files...[/cyan]")
         
@@ -317,8 +390,7 @@ class CLI:
         # Git commit
         if self.settings.git_enabled:
             try:
-                git = get_git_manager()
-                git.commit_migration(report)
+                self.container.git_manager.commit_migration(report)
                 self.console.print("[green]✅ Changes committed to Git[/green]\n")
             except Exception as e:
                 self.console.print(f"[yellow]⚠️  Git commit failed: {str(e)}[/yellow]\n")
@@ -335,8 +407,7 @@ class CLI:
                 self.console.print("\n[green]✅ Originals deleted[/green]\n")
                 if self.settings.git_enabled:
                     try:
-                        git = get_git_manager()
-                        git.commit_deletion()
+                        self.container.git_manager.commit_deletion()
                     except Exception:
                         pass
             else:
@@ -349,14 +420,11 @@ class CLI:
     def handle_seed_ingredients_command(self):
         """Handle /seed-ingredients command for ingredient seeding."""
         from onboarding import IngredientSeeder
-        from agent.llm import LLMClient
-        from vault.reader import get_vault_reader
-        from vault.writer import get_vault_writer
         
         seeder = IngredientSeeder(
-            llm_client=LLMClient(),
-            vault_reader=get_vault_reader(),
-            vault_writer=get_vault_writer()
+            llm_client=self.container.llm_client,
+            vault_reader=self.container.vault_reader,
+            vault_writer=self.container.vault_writer
         )
         
         # Check if already seeded
@@ -373,7 +441,7 @@ class CLI:
         if count > 0:
             # Invalidate context cache so new ingredients are
             # picked up immediately
-            self.context_loader.invalidate()
+            self.context_manager.invalidate()
             self.console.print(
                 f"\n[green]✅ {count} ingredients added. "
                 f"They'll be used from your next log entry.[/green]\n"
@@ -415,16 +483,14 @@ class CLI:
                     self.handle_special_command(user_input)
                     continue
                 
-                # Process message through agent
-                response = self.agent.process_message(user_input)
+                # Process message through orchestrator
+                result = self.orchestrator.process(user_input)
                 
                 # Display response
-                if response.startswith("✅"):
-                    self.show_response(response, "success")
-                elif "error" in response.lower() or "failed" in response.lower():
-                    self.show_response(response, "error")
+                if result.success:
+                    self.show_response(result.message, "success")
                 else:
-                    self.show_response(response, "info")
+                    self.show_response(result.message, "error")
                 
             except KeyboardInterrupt:
                 self.running = False
@@ -437,9 +503,13 @@ class CLI:
         self.console.print(goodbye, style="cyan")
 
 
-def run_cli():
-    """Run the CLI interface."""
-    cli = CLI()
+def run_cli(container: "Container"):
+    """Run the CLI interface.
+    
+    Args:
+        container: Dependency injection container with all components
+    """
+    cli = CLI(container)
     cli.run()
 
 # Made with Bob
