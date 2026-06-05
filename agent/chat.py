@@ -38,12 +38,28 @@ class ChatAgent:
         Returns:
             'log' or 'chat'
         """
+        user_lower = user_input.lower().strip()
+        
         # Fast path: explicit log command
-        if user_input.lower().strip().startswith('log '):
+        if user_lower.startswith('log '):
+            return 'log'
+        
+        # Fast path: common food logging phrases
+        log_phrases = [
+            'i ate', 'i had', 'i consumed', 'i drank',
+            'ate ', 'had ', 'consumed ', 'drank ',
+            'breakfast:', 'lunch:', 'dinner:', 'snack:',
+            'today i', 'yesterday i', 'just ate', 'just had'
+        ]
+        if any(user_lower.startswith(phrase) for phrase in log_phrases):
+            return 'log'
+        
+        # Fast path: contains quantities (grams, ml, etc.) - likely a log
+        if re.search(r'\d+\s*(g|grams|ml|milliliters|kg|kilograms|oz|ounces|cups?|tbsp|tsp)\b', user_lower):
             return 'log'
         
         # Fast path: explicit question punctuation with no food quantities
-        if user_input.strip().endswith('?') and not re.search(r'\d+\s*(g|ml|kg|grams|ml)', user_input.lower()):
+        if user_input.strip().endswith('?'):
             return 'chat'
         
         # LLM classification for ambiguous cases
