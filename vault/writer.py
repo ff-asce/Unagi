@@ -6,6 +6,16 @@ from config import get_settings
 from .parser import format_log_data, merge_log_data, validate_log_data
 from .reader import get_vault_reader
 import yaml
+import asyncio
+
+# Import memory components for dual-write
+try:
+    from memory.database import MemoryDatabase
+    from memory.vector_store import VectorStore
+    from memory.embeddings import generate_embedding
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
 
 
 class WriteError(Exception):
@@ -20,6 +30,16 @@ class VaultWriter:
         """Initialize the vault writer with settings."""
         self.settings = get_settings()
         self.reader = get_vault_reader()
+        
+        # Initialize memory components if available
+        self.memory_db = None
+        self.vector_store = None
+        if MEMORY_AVAILABLE:
+            try:
+                self.memory_db = MemoryDatabase(self.settings.vault_path / "memory.db")
+                self.vector_store = VectorStore(self.settings.vault_path / "vector_store")
+            except Exception as e:
+                print(f"Warning: Could not initialize memory components: {str(e)}")
     
     def write_daily_log(
         self,
@@ -59,15 +79,64 @@ class VaultWriter:
             # Format as markdown with frontmatter
             content = format_log_data(data)
             
-            # Write to file
+            # Write to file (source of truth)
             log_path.parent.mkdir(parents=True, exist_ok=True)
             with open(log_path, 'w', encoding='utf-8') as f:
                 f.write(content)
+            
+            # Dual-write to database and vector store if available
+            if MEMORY_AVAILABLE and self.memory_db and self.vector_store:
+                try:
+                    asyncio.run(self._write_to_memory(date, data, content))
+                except Exception as e:
+                    print(f"Warning: Failed to write to memory systems: {str(e)}")
             
             return log_path
             
         except Exception as e:
             raise WriteError(f"Failed to write log for {date.date()}: {str(e)}")
+    
+    async def _write_to_memory(self, date: datetime, data: Dict[str, Any], content: str):
+        """Write log data to database and vector store.
+        
+        Args:
+            date: Date for the log
+            data: Log data dictionary
+            content: Formatted markdown content
+        """
+        # Prepare data for database
+        log_data = {
+            'date': date.date().isoformat(),
+            'calories': data.get('calories'),
+            'protein': data.get('protein'),
+            'carbs': data.get('carbs'),
+            'fats': data.get('fats'),
+            'fiber': data.get('fiber'),
+            'water_ml': data.get('water_ml'),
+            'weight_kg': data.get('weight_kg'),
+            'goal_calories': data.get('goal_calories'),
+            'goal_protein': data.get('goal_protein'),
+            'goal_carbs': data.get('goal_carbs'),
+            'goal_fats': data.get('goal_fats'),
+            'notes': data.get('notes'),
+            'meals': data.get('meals', [])
+        }
+        
+        # Insert into database
+        log_id = await self.memory_db.insert_log(log_data)
+        
+        # Generate embedding and add to vector store
+        embedding = generate_embedding(content)
+        await self.vector_store.add_document(
+            doc_id=f"log_{date.date().isoformat()}",
+            text=content,
+            embedding=embedding,
+            metadata={
+                'date': date.date().isoformat(),
+                'log_id': log_id,
+                'type': 'daily_log'
+            }
+        )
     
     def write_user_profile(self, data: Dict[str, Any]) -> Path:
         """Write or update the user profile file.

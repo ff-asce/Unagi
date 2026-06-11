@@ -1,9 +1,11 @@
 # 🐍 UNAGI — Total Food Awareness
 
-**Version:** 1.0 (v1 CLI Agent)  
-**Status:** 🚧 In Development - Core Infrastructure Complete
+**Version:** 1.5 (Intelligence System)
+**Status:** ✅ Core Complete + Intelligence System Implemented
 
 A local-first, AI-powered nutrition agent that acts as your personalized nutritionist and food log manager. Named after Ross Geller's concept of "Unagi" — total awareness.
+
+**NEW:** 🧠 Intelligence system with pattern learning, trend detection, and proactive suggestions!
 
 ---
 
@@ -31,6 +33,10 @@ unagi/
 ├── git_manager/        # Git operations
 ├── onboarding/         # First-run setup
 ├── config/             # Configuration management
+├── memory/             # ✨ NEW: Database & vector store
+├── data/               # ✨ NEW: Data enrichment (APIs, local DB)
+├── intelligence/       # ✨ NEW: Learning, trends, suggestions
+├── migrations/         # ✨ NEW: Migration scripts
 ├── ui/                 # CLI interface (pending)
 ├── main.py             # Entry point (pending)
 ├── requirements.txt    # Dependencies
@@ -93,6 +99,29 @@ unagi/
   - TDEE calculation (Mifflin-St Jeor equation)
   - Vault initialization
   - Profile file creation
+
+#### 7. **Intelligence System** (`memory/`, `data/`, `intelligence/`) ✨ NEW
+- ✅ **Memory Layer** - Structured memory with semantic search
+  - SQLite database with 7 tables
+  - ChromaDB vector store for embeddings
+  - Sentence-transformers for semantic search
+  - Hybrid retrieval (semantic + recent)
+- ✅ **Data Enrichment** - Enhanced nutrition data
+  - USDA FoodData Central API client
+  - Open Food Facts API client
+  - Local Indian foods database (10 items)
+  - Confidence scoring (0.0-1.0)
+  - 90-day API caching
+- ✅ **Intelligence Layer** - Learning and insights
+  - Pattern learning (meals, nutrients, ingredients, goals)
+  - Trend detection (calories, macros, timing, consistency)
+  - Proactive suggestions (7 types with priorities)
+- ✅ **Integration** - Seamless integration
+  - Dual-write to markdown + database
+  - Semantic context loading
+  - Migration script for existing logs
+
+**📖 See:** `INTELLIGENCE_USER_GUIDE.md` for complete documentation
 
 ### 🚧 Pending Modules
 
