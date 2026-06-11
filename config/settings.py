@@ -89,6 +89,8 @@ class Settings:
         self.git_enabled = git_config.get("enabled", True)
         self.git_branch = git_config.get("branch", "main")
         self.git_auto_push = git_config.get("auto_push", True)
+        # F-13: Independent git root (defaults to vault_root if not set)
+        self.git_root = git_config.get("git_root", "") or self.vault_root
         
         # UI configuration
         ui_config = config.get("ui", {})
@@ -106,13 +108,11 @@ class Settings:
                 "Get your API key from: https://aistudio.google.com/app/apikey (for Gemini)"
             )
         
-        # Vault root can be empty (will be set during onboarding)
-        # but if set, it should be a valid path
+        # Vault root: only warn if set AND missing — do not block startup
+        # The vault directory will be created by the writer on first use
         if self.vault_root and not Path(self.vault_root).exists():
-            errors.append(
-                f"Vault root path does not exist: {self.vault_root}\n"
-                "Please update config.yaml with a valid path or leave it empty for first-run setup."
-            )
+            print(f"⚠️  Warning: Vault path does not exist yet: {self.vault_root}")
+            print("   It will be created automatically on first log.")
         
         if errors:
             raise ConfigError("\n\n".join(errors))
@@ -184,6 +184,32 @@ def get_settings(reload: bool = False) -> Settings:
     global _settings
     if _settings is None or reload:
         _settings = Settings()
+        # F-20: Reload all dependent singletons when settings are reloaded
+        if reload:
+            _reload_all_singletons()
     return _settings
+
+
+def _reload_all_singletons():
+    """Reload all module singletons after settings change.
+    
+    This ensures that when settings are reloaded (e.g., after update_vault_root()),
+    all dependent modules get the new settings instance.
+    """
+    try:
+        from vault.reader import get_vault_reader
+        from vault.writer import get_vault_writer
+        from agent.llm import get_llm_client
+        from agent.context import get_context_loader
+        from git_manager.commits import get_git_manager
+        
+        get_vault_reader(reload=True)
+        get_vault_writer(reload=True)
+        get_llm_client(reload=True)
+        get_context_loader(reload=True)
+        get_git_manager(reload=True)
+    except ImportError:
+        # Module not yet initialized - this is fine
+        pass
 
 # Made with Bob

@@ -89,12 +89,15 @@ def get_help_text() -> str:
   • "What should I eat tonight to fix my Vitamin D deficit?"
 
 ⚡ SPECIAL COMMANDS
-  /help      Show this help message
-  /today     Show today's log summary
-  /week      Show last 7 days summary
-  /profile   Show your user profile
-  /config    Show current configuration
-  /exit      Quit Unagi
+  /help              Show this help message
+  /today             Show today's log summary
+  /week              Show last 7 days summary
+  /profile           Show your user profile
+  /config            Show current configuration
+  /migrate           Migrate logs from old Nutrition/ structure
+  /migrate --cleanup Delete original files after migration
+  /seed-ingredients  Scan log history for recurring ingredients
+  /exit              Quit Unagi
 
 📊 UNDERSTANDING YOUR LOGS
   • Deficit = Calories consumed - Maintenance

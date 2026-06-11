@@ -57,7 +57,7 @@ def create_user_profile(
     name: str,
     weight_kg: float,
     height_cm: int,
-    age: int,
+    dob: str,
     gender: str,
     goal: str,
     maintenance_calories: Optional[int] = None,
@@ -70,7 +70,7 @@ def create_user_profile(
         name: User's name
         weight_kg: Current weight in kg
         height_cm: Height in cm
-        age: Age in years
+        dob: Date of birth in YYYY-MM-DD format
         gender: 'male', 'female', or 'other'
         goal: 'cut', 'bulk', or 'maintain'
         maintenance_calories: Maintenance calories (calculated if not provided)
@@ -80,14 +80,14 @@ def create_user_profile(
     Returns:
         User profile dictionary
     """
+    # Calculate age from DOB for TDEE calculation
+    dob_date = datetime.strptime(dob, "%Y-%m-%d")
+    today = datetime.now()
+    age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
+    
     # Calculate maintenance if not provided
     if maintenance_calories is None:
         maintenance_calories = calculate_tdee(weight_kg, height_cm, age, gender)
-    
-    # Calculate date of birth from age
-    current_year = datetime.now().year
-    birth_year = current_year - age
-    dob = f"{birth_year}-01-01"  # Approximate DOB
     
     profile = {
         'name': name,
@@ -127,13 +127,30 @@ def run_onboarding_flow() -> bool:
         if not name:
             raise OnboardingError("Name is required")
         
-        age_str = input("How old are you? ").strip()
+        dob_str = input("What's your date of birth? (YYYY-MM-DD or DD/MM/YYYY) ").strip()
         try:
-            age = int(age_str)
+            # Try multiple formats
+            dob = None
+            dob_date = None
+            for fmt in ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]:
+                try:
+                    dob_date = datetime.strptime(dob_str, fmt)
+                    dob = dob_date.strftime("%Y-%m-%d")
+                    break
+                except ValueError:
+                    continue
+            if dob is None or dob_date is None:
+                raise OnboardingError("Please enter your date of birth as YYYY-MM-DD")
+            
+            # Calculate age for TDEE calculation
+            today = datetime.now()
+            age = today.year - dob_date.year - ((today.month, today.day) < (dob_date.month, dob_date.day))
             if age < 10 or age > 120:
-                raise ValueError
-        except ValueError:
-            raise OnboardingError("Please enter a valid age")
+                raise ValueError("Age must be between 10 and 120")
+        except OnboardingError:
+            raise
+        except Exception:
+            raise OnboardingError("Invalid date of birth format")
         
         weight_str = input("What's your current weight in kg? ").strip()
         try:
@@ -178,7 +195,7 @@ def run_onboarding_flow() -> bool:
             name=name,
             weight_kg=weight_kg,
             height_cm=height_cm,
-            age=age,
+            dob=dob,
             gender=gender,
             goal=goal,
             maintenance_calories=maintenance_calories
