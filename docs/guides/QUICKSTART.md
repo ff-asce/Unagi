@@ -81,6 +81,10 @@ GIT_REMOTE_TOKEN=
 - `GIT_REMOTE_URL`: Your GitHub repository URL (see below)
 - `GIT_REMOTE_TOKEN`: GitHub Personal Access Token (see below)
 
+**Optional (for enhanced intelligence features):**
+- `USDA_API_KEY`: USDA FoodData Central API key (see below)
+- `OPENFOODFACTS_USER_AGENT`: User agent for OpenFoodFacts (default: "Unagi/1.0")
+
 #### Setting up GitHub Backup (Optional)
 
 If you want to automatically backup your vault to GitHub:
@@ -118,6 +122,27 @@ If you want to automatically backup your vault to GitHub:
    ```
 
 **Note:** If you skip GitHub setup, Unagi will still commit locally to Git for version control.
+
+#### Setting up USDA API (Optional - Enhanced Intelligence)
+
+For access to 400,000+ foods with detailed nutrition data:
+
+1. **Get a free USDA API key:**
+   - Go to: https://fdc.nal.usda.gov/api-key-signup.html
+   - Fill out the form (takes 1 minute)
+   - Check your email for the API key
+
+2. **Add to `.env`:**
+   ```env
+   USDA_API_KEY=your_usda_api_key_here
+   ```
+
+**Benefits:**
+- Access to comprehensive USDA FoodData Central database
+- More accurate nutrition data for common foods
+- Better confidence scores for food estimates
+
+**Note:** UNAGI works great without this - it will use the built-in database and LLM estimates.
 
 ### Configure `config.yaml`:
 
