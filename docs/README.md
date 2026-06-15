@@ -9,6 +9,16 @@ Welcome to the UNAGI documentation! This directory contains all guides, specific
 - **[Gemini API Setup](guides/GEMINI_SETUP.md)** - Configure your LLM API key
 - **[User Guide](guides/INTELLIGENCE_USER_GUIDE.md)** - Complete feature walkthrough
 
+### Architecture Diagrams
+Visual diagrams of the system architecture:
+- **[Architecture Diagrams](diagrams/ARCHITECTURE.md)** - Complete set of Mermaid diagrams
+  - Overall system architecture
+  - Intelligence system architecture
+  - Data flow diagrams (logging & suggestions)
+  - Database schema (ER diagram)
+  - Component dependencies
+  - Deployment architecture
+
 ### Specifications
 See **[Specs/](../Specs/)** directory for detailed technical specifications:
 - **[INTELLIGENCE_SPEC_v1.md](../Specs/v1/INTELLIGENCE_SPEC_v1.md)** - Intelligence system architecture
