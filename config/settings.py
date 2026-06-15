@@ -135,6 +135,14 @@ class Settings:
         """Get the full path to the User Profile file."""
         return self.get_data_path() / self.vault_user_profile_filename
     
+    def get_memory_db_path(self) -> Path:
+        """Get the full path to the memory database file."""
+        return self.get_vault_path() / "memory.db"
+    
+    def get_vector_store_path(self) -> Path:
+        """Get the full path to the vector store directory."""
+        return self.get_vault_path() / "vector_store"
+    
     def update_vault_root(self, new_path: str):
         """Update the vault root path in config.yaml.
         

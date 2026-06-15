@@ -43,8 +43,8 @@ class Container:
         self.git_manager = GitManager(settings)
         
         # Memory layer (intelligence system)
-        self.memory_db = Database(settings.memory_db_path)
-        self.vector_store = VectorStore(settings.vector_store_path)
+        self.memory_db = Database(str(settings.get_memory_db_path()))
+        self.vector_store = VectorStore(str(settings.get_vector_store_path()))
         
         # Initialize memory systems asynchronously
         asyncio.run(self._initialize_memory())
