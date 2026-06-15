@@ -10,9 +10,9 @@ import asyncio
 
 # Import memory components for dual-write
 try:
-    from memory.database import MemoryDatabase
+    from memory.database import Database
     from memory.vector_store import VectorStore
-    from memory.embeddings import generate_embedding
+    from memory.embeddings import generate_embedding, embed_log
     MEMORY_AVAILABLE = True
 except ImportError:
     MEMORY_AVAILABLE = False
@@ -26,18 +26,25 @@ class WriteError(Exception):
 class VaultWriter:
     """Writes data to the Obsidian vault."""
     
-    def __init__(self):
-        """Initialize the vault writer with settings."""
-        self.settings = get_settings()
-        self.reader = get_vault_reader()
+    def __init__(self, settings=None, reader=None):
+        """Initialize the vault writer with settings.
+        
+        Args:
+            settings: Settings instance (optional, will load if not provided)
+            reader: VaultReader instance (optional, will create if not provided)
+        """
+        self.settings = settings or get_settings()
+        self.reader = reader or get_vault_reader()
         
         # Initialize memory components if available
         self.memory_db = None
         self.vector_store = None
         if MEMORY_AVAILABLE:
             try:
-                self.memory_db = MemoryDatabase(self.settings.vault_path / "memory.db")
-                self.vector_store = VectorStore(self.settings.vault_path / "vector_store")
+                from memory.database import Database
+                vault_path = self.settings.get_vault_path()
+                self.memory_db = Database(vault_path / "memory.db")
+                self.vector_store = VectorStore(vault_path / "vector_store")
             except Exception as e:
                 print(f"Warning: Could not initialize memory components: {str(e)}")
     
