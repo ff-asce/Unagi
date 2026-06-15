@@ -7,7 +7,7 @@ from .prompts import get_system_prompt
 
 # Import memory components for semantic retrieval
 try:
-    from memory.database import MemoryDatabase
+    from memory.database import Database
     from memory.vector_store import VectorStore
     from memory.retrieval import get_relevant_context
     MEMORY_AVAILABLE = True
@@ -33,7 +33,7 @@ class ContextLoader:
         self.vector_store = None
         if MEMORY_AVAILABLE:
             try:
-                self.memory_db = MemoryDatabase(self.settings.vault_path / "memory.db")
+                self.memory_db = Database(self.settings.vault_path / "memory.db")
                 self.vector_store = VectorStore(self.settings.vault_path / "vector_store")
             except Exception as e:
                 print(f"Warning: Could not initialize memory components: {str(e)}")

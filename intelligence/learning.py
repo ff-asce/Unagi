@@ -5,13 +5,13 @@ from typing import Dict, List, Any, Optional, Tuple
 from collections import Counter, defaultdict
 import statistics
 
-from memory.database import MemoryDatabase
+from memory.database import Database
 
 
 class PatternLearner:
     """Learn patterns from user's historical nutrition data."""
     
-    def __init__(self, database: MemoryDatabase):
+    def __init__(self, database: Database):
         """Initialize pattern learner.
         
         Args:
@@ -35,14 +35,14 @@ class PatternLearner:
         
         # Get all meals from the period
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT m.meal_type, m.time, m.items
                 FROM meals m
                 JOIN daily_logs l ON m.log_id = l.id
                 WHERE l.date >= ?
                 ORDER BY l.date, m.time
             """, (cutoff_date.date().isoformat(),))
-            meals = await cursor.fetchall()
+            meals = cursor.fetchall()
         
         if not meals:
             return {
@@ -119,13 +119,13 @@ class PatternLearner:
         
         # Get all daily totals
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT calories, protein, carbs, fats, fiber
                 FROM daily_logs
                 WHERE date >= ?
                 ORDER BY date
             """, (cutoff_date.date().isoformat(),))
-            logs = await cursor.fetchall()
+            logs = cursor.fetchall()
         
         if not logs:
             return {
@@ -182,13 +182,13 @@ class PatternLearner:
         
         # Get all meals with items
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT m.meal_type, m.items
                 FROM meals m
                 JOIN daily_logs l ON m.log_id = l.id
                 WHERE l.date >= ? AND m.items IS NOT NULL
             """, (cutoff_date.date().isoformat(),))
-            meals = await cursor.fetchall()
+            meals = cursor.fetchall()
         
         if not meals:
             return {
@@ -258,14 +258,14 @@ class PatternLearner:
         
         # Get logs with goals
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT date, calories, protein, carbs, fats,
                        goal_calories, goal_protein, goal_carbs, goal_fats
                 FROM daily_logs
                 WHERE date >= ? AND goal_calories IS NOT NULL
                 ORDER BY date
             """, (cutoff_date.date().isoformat(),))
-            logs = await cursor.fetchall()
+            logs = cursor.fetchall()
         
         if not logs:
             return {

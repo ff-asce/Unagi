@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import random
 
-from memory.database import MemoryDatabase
+from memory.database import Database
 from .learning import PatternLearner
 from .trends import TrendDetector
 
@@ -11,7 +11,7 @@ from .trends import TrendDetector
 class SuggestionEngine:
     """Generate proactive suggestions based on learned patterns and trends."""
     
-    def __init__(self, database: MemoryDatabase, learner: PatternLearner, detector: TrendDetector):
+    def __init__(self, database: Database, learner: PatternLearner, detector: TrendDetector):
         """Initialize suggestion engine.
         
         Args:
@@ -206,12 +206,12 @@ class SuggestionEngine:
         today = datetime.now().date()
         
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT water_ml
                 FROM daily_logs
                 WHERE date = ?
             """, (today.isoformat(),))
-            row = await cursor.fetchone()
+            row = cursor.fetchone()
         
         suggestions = []
         current_water = row[0] if row and row[0] else 0

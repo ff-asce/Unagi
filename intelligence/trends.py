@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 import statistics
 
-from memory.database import MemoryDatabase
+from memory.database import Database
 
 
 class TrendDetector:
     """Detect trends in nutrition data over time."""
     
-    def __init__(self, database: MemoryDatabase):
+    def __init__(self, database: Database):
         """Initialize trend detector.
         
         Args:
@@ -33,13 +33,13 @@ class TrendDetector:
         cutoff_date = datetime.now() - timedelta(days=days)
         
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT date, calories
                 FROM daily_logs
                 WHERE date >= ? AND calories IS NOT NULL
                 ORDER BY date
             """, (cutoff_date.date().isoformat(),))
-            logs = await cursor.fetchall()
+            logs = cursor.fetchall()
         
         if len(logs) < 7:
             return {
@@ -86,13 +86,13 @@ class TrendDetector:
         cutoff_date = datetime.now() - timedelta(days=days)
         
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT date, protein, carbs, fats, fiber
                 FROM daily_logs
                 WHERE date >= ?
                 ORDER BY date
             """, (cutoff_date.date().isoformat(),))
-            logs = await cursor.fetchall()
+            logs = cursor.fetchall()
         
         if len(logs) < 7:
             return {
@@ -147,14 +147,14 @@ class TrendDetector:
         cutoff_date = datetime.now() - timedelta(days=days)
         
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT m.meal_type, m.time, l.date
                 FROM meals m
                 JOIN daily_logs l ON m.log_id = l.id
                 WHERE l.date >= ?
                 ORDER BY l.date, m.time
             """, (cutoff_date.date().isoformat(),))
-            meals = await cursor.fetchall()
+            meals = cursor.fetchall()
         
         if len(meals) < 14:
             return {'insufficient_data': True}
@@ -218,13 +218,13 @@ class TrendDetector:
         cutoff_date = datetime.now() - timedelta(days=days)
         
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT date, calories
                 FROM daily_logs
                 WHERE date >= ? AND calories IS NOT NULL
                 ORDER BY date
             """, (cutoff_date.date().isoformat(),))
-            logs = await cursor.fetchall()
+            logs = cursor.fetchall()
         
         if len(logs) < 14:
             return {'insufficient_data': True}
@@ -265,13 +265,13 @@ class TrendDetector:
         cutoff_date = datetime.now() - timedelta(weeks=weeks)
         
         async with self.db.get_connection() as conn:
-            cursor = await conn.execute("""
+            cursor = conn.execute("""
                 SELECT date, calories
                 FROM daily_logs
                 WHERE date >= ? AND calories IS NOT NULL
                 ORDER BY date
             """, (cutoff_date.date().isoformat(),))
-            logs = await cursor.fetchall()
+            logs = cursor.fetchall()
         
         if len(logs) < 14:
             return {'insufficient_data': True}

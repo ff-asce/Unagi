@@ -4,6 +4,7 @@ import asyncio
 from datetime import date, datetime
 from typing import Dict, List, Optional, Any
 from pathlib import Path
+from contextlib import asynccontextmanager
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,19 @@ class Database:
             self._conn.row_factory = sqlite3.Row
         return self._conn
     
+    @asynccontextmanager
+    async def get_connection(self):
+        """Async context manager for database connection.
+        
+        Yields:
+            Database connection
+        """
+        conn = self._get_connection()
+        try:
+            yield conn
+        finally:
+            conn.commit()
+    
     async def initialize(self):
         """Create database schema if it doesn't exist."""
         conn = self._get_connection()
@@ -46,6 +60,8 @@ class Database:
                 carbs INTEGER,
                 fats INTEGER,
                 fiber INTEGER,
+                water_ml INTEGER,
+                weight_kg REAL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
