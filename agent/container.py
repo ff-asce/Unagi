@@ -93,7 +93,7 @@ class Container:
         """Initialize memory database and vector store."""
         try:
             await self.memory_db.initialize()
-            await self.vector_store.initialize()
+            # VectorStore initializes in __init__, no async init needed
         except Exception as e:
             import logging
             logging.warning(f"Failed to initialize memory systems: {e}")
