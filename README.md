@@ -1,169 +1,97 @@
 # 🐍 UNAGI — Total Food Awareness
 
-**Version:** 1.5 (Intelligence System)
-**Status:** ✅ Core Complete + Intelligence System Implemented
+**Version:** 2.0 (Intelligence System Complete)  
+**Status:** ✅ Production Ready
 
 A local-first, AI-powered nutrition agent that acts as your personalized nutritionist and food log manager. Named after Ross Geller's concept of "Unagi" — total awareness.
 
-**NEW:** 🧠 Intelligence system with pattern learning, trend detection, and proactive suggestions!
+**NEW in v2.0:** 🧠 Complete intelligence system with semantic memory, pattern learning, trend detection, and proactive suggestions!
 
 ---
 
-## 📋 Project Overview
+## 🚀 Quick Start
 
-Unagi is a CLI-based nutrition tracking agent that:
-- Lives entirely on your machine (no cloud storage)
-- Manages an Obsidian-based food journal with perfect markdown formatting
-- Commits every change to Git with descriptive messages
-- Uses conversational AI for natural language food logging
-- Calculates macros and tracks 29 micronutrients
-- Provides personalized nutrition advice based on your history
+```bash
+# 1. Clone and setup
+git clone <your-repo-url>
+cd unagi
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Configure
+cp .env.example .env
+# Add your LLM_API_KEY to .env
+
+# 3. Run
+python3 main.py
+```
+
+**📖 Full Guide:** See [docs/guides/QUICKSTART.md](docs/guides/QUICKSTART.md)
 
 ---
 
-## 🏗️ Current Implementation Status
+## ✨ Key Features
 
-### ✅ Completed Modules
+### 🧠 Intelligence System (NEW in v2.0)
+- **Semantic Memory**: ChromaDB vector store for contextual search across your entire history
+- **Pattern Learning**: Automatically learns your eating habits, preferences, and goals
+- **Trend Detection**: Identifies nutrition trends and patterns over time
+- **Smart Suggestions**: Proactive recommendations based on your data and goals
+- **Data Enrichment**: USDA FoodData Central (400K+ foods) + OpenFoodFacts + Indian foods database
 
-#### 1. **Project Structure** (`/Users/parthjindal/Parth Projects/unagi/`)
+### 🎯 Core Features
+- **Natural Language Logging**: Just describe what you ate in plain English
+- **Obsidian Integration**: Markdown-first, vault-native with perfect formatting
+- **Git Sync**: Automatic version control with descriptive commit messages
+- **Privacy-First**: All data stays local on your machine
+- **29 Micronutrients**: Comprehensive nutrition tracking beyond just macros
+- **TDEE Calculation**: Personalized calorie targets based on your profile
+
+---
+
+## 📁 Project Structure
+
 ```
 unagi/
-├── agent/              # AI agent logic
-├── vault/              # Obsidian file management
-├── git_manager/        # Git operations
-├── onboarding/         # First-run setup
+├── agent/              # AI agent logic (orchestrator, intent, context)
+├── vault/              # Obsidian file management (reader, writer, parser)
+├── git_manager/        # Git operations (commits, push)
+├── onboarding/         # First-run setup and ingredient seeding
 ├── config/             # Configuration management
-├── memory/             # ✨ NEW: Database & vector store
-├── data/               # ✨ NEW: Data enrichment (APIs, local DB)
-├── intelligence/       # ✨ NEW: Learning, trends, suggestions
-├── migrations/         # ✨ NEW: Migration scripts
-├── ui/                 # CLI interface (pending)
-├── main.py             # Entry point (pending)
+├── memory/             # 🧠 Database & vector store (SQLite + ChromaDB)
+├── data/               # 🧠 Data enrichment (USDA, OpenFoodFacts, Indian foods)
+├── intelligence/       # 🧠 Learning, trends, suggestions
+├── migration/          # Migration scripts for existing logs
+├── ui/                 # CLI interface (Rich-based)
+├── tests/              # Unit tests
+├── docs/               # 📚 Documentation
+│   ├── guides/         # User guides and tutorials
+│   ├── implementation/ # Implementation status and notes
+│   └── archive/        # Historical documents
+├── Specs/              # Technical specifications
+├── main.py             # Entry point
 ├── requirements.txt    # Dependencies
 ├── config.yaml         # Non-secret settings
-├── .env.example        # Environment template
-└── .gitignore          # Git exclusions
+└── .env.example        # Environment template
 ```
 
-#### 2. **Configuration System** (`config/`)
-- ✅ `settings.py` - Loads and validates `.env` and `config.yaml`
-- ✅ Supports multiple LLM backends (Gemini, Claude, Groq, Ollama)
-- ✅ Git configuration with optional remote push
-- ✅ Vault path management
-- ✅ Clear error messages for missing configuration
+---
 
-#### 3. **Agent Intelligence** (`agent/`)
-- ✅ `prompts.py` - System prompt with dynamic context injection
-  - Personality definition
-  - Nutritional reasoning rules
-  - Output format specifications
-  - Micronutrient tracking (29 nutrients in exact order)
-- ✅ `llm.py` - OpenAI-compatible LLM client
-  - Supports Gemini 2.0 Flash (recommended free tier)
-  - Rate limiting with exponential backoff
-  - Error handling and retries
-  - Streaming support
+## 📚 Documentation
 
-#### 4. **Vault Management** (`vault/`)
-- ✅ `parser.py` - YAML frontmatter parsing and validation
-  - Parse daily log files
-  - Parse user profile
-  - Validate data types and formats
-  - Format log data as markdown
-  - Merge logic for updating existing files
-- ✅ `reader.py` - Read vault files
-  - Read user profile
-  - Read daily logs by date
-  - Read last N days of logs
-  - List all logs
-  - Date parsing from filenames
-- ✅ `writer.py` - Write vault files
-  - Create/update daily logs
-  - Merge with existing data
-  - Write user profile
-  - Update profile fields
-  - Create vault directory structure
-  - Auto-create Nutrition Dashboard template
+### For Users
+- **[Quick Start Guide](docs/guides/QUICKSTART.md)** - Get up and running in 5 minutes
+- **[Intelligence User Guide](docs/guides/INTELLIGENCE_USER_GUIDE.md)** - Complete feature walkthrough
+- **[Gemini API Setup](docs/guides/GEMINI_SETUP.md)** - Configure your LLM API key
 
-#### 5. **Git Integration** (`git_manager/`)
-- ✅ `commits.py` - Git operations
-  - Initialize repository
-  - Commit file changes with descriptive messages
-  - Push to remote (optional)
-  - Status checking
-  - Error handling
+### For Developers
+- **[Architecture Specification](Specs/v1/ARCH_SPEC_v1.md)** - Overall system design
+- **[Intelligence Specification](Specs/v1/INTELLIGENCE_SPEC_v1.md)** - Intelligence system architecture
+- **[Implementation Status](docs/implementation/INTELLIGENCE_IMPLEMENTATION_STATUS.md)** - Current progress
+- **[Testing Guide](tests/README.md)** - Running tests
 
-#### 6. **Onboarding** (`onboarding/`)
-- ✅ `setup.py` - First-run flow
-  - Interactive user profile creation
-  - TDEE calculation (Mifflin-St Jeor equation)
-  - Vault initialization
-  - Profile file creation
-
-#### 7. **Intelligence System** (`memory/`, `data/`, `intelligence/`) ✨ NEW
-- ✅ **Memory Layer** - Structured memory with semantic search
-  - SQLite database with 7 tables
-  - ChromaDB vector store for embeddings
-  - Sentence-transformers for semantic search
-  - Hybrid retrieval (semantic + recent)
-- ✅ **Data Enrichment** - Enhanced nutrition data
-  - USDA FoodData Central API client
-  - Open Food Facts API client
-  - Local Indian foods database (10 items)
-  - Confidence scoring (0.0-1.0)
-  - 90-day API caching
-- ✅ **Intelligence Layer** - Learning and insights
-  - Pattern learning (meals, nutrients, ingredients, goals)
-  - Trend detection (calories, macros, timing, consistency)
-  - Proactive suggestions (7 types with priorities)
-- ✅ **Integration** - Seamless integration
-  - Dual-write to markdown + database
-  - Semantic context loading
-  - Migration script for existing logs
-
-**📖 See:** `INTELLIGENCE_USER_GUIDE.md` for complete documentation
-
-### 🚧 Pending Modules
-
-#### 7. **Agent Context** (`agent/context.py`) - NOT YET CREATED
-**Purpose:** Load user profile and recent logs into context for LLM
-**Key Functions:**
-- `load_context()` - Combine profile + last 7 days
-- `format_context_for_llm()` - Format for system prompt injection
-
-#### 8. **Agent Chat Loop** (`agent/chat.py`) - NOT YET CREATED
-**Purpose:** Main conversation loop with intent detection
-**Key Functions:**
-- `detect_intent()` - Determine if user wants to log food or chat
-- `parse_log_request()` - Extract date and food data from user input
-- `handle_chat()` - Answer questions about nutrition/history
-- `handle_log()` - Process food logging requests
-
-#### 9. **UI - Mascot** (`ui/mascot.py`) - NOT YET CREATED
-**Purpose:** ASCII/ANSI pixel art for startup screen
-**Content:**
-- Ross doing Unagi pose
-- Cute eel mascot
-- Startup banner
-
-#### 10. **UI - CLI** (`ui/cli.py`) - NOT YET CREATED
-**Purpose:** Rich-based CLI interface
-**Key Functions:**
-- Startup screen with mascot
-- Formatted output (panels, tables)
-- Special commands (`/help`, `/today`, `/week`, `/profile`, `/exit`)
-- Input handling with history
-- Color-coded responses
-
-#### 11. **Main Entry Point** (`main.py`) - NOT YET CREATED
-**Purpose:** Wire everything together
-**Flow:**
-1. Load configuration
-2. Check if onboarding needed
-3. Initialize vault, git, LLM
-4. Show startup screen
-5. Enter chat loop
-6. Handle graceful shutdown
+**📖 Full Documentation Index:** [docs/README.md](docs/README.md)
 
 ---
 
@@ -176,15 +104,17 @@ unagi/
 
 ### Installation
 
-1. **Clone or navigate to the project:**
+1. **Clone the repository:**
 ```bash
-cd "/Users/parthjindal/Parth Projects/unagi"
+git clone <your-repo-url>
+cd unagi
 ```
 
 2. **Create virtual environment:**
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # On macOS/Linux
+# or on Windows: venv\Scripts\activate
 ```
 
 3. **Install dependencies:**
@@ -202,7 +132,7 @@ cp .env.example .env
 Edit `config.yaml` and set your Obsidian vault path:
 ```yaml
 vault:
-  root: "/path/to/your/ObsidianVault"
+  root_path: "/path/to/your/ObsidianVault"
 ```
 
 ### Get API Key (Gemini - Free Tier)
@@ -210,145 +140,113 @@ vault:
 2. Create an API key
 3. Add to `.env`: `LLM_API_KEY=your_key_here`
 
----
-
-## 📝 Next Steps to Complete v1
-
-### Immediate Tasks (Required for MVP)
-
-1. **Create `agent/context.py`**
-   - Load user profile from vault
-   - Load last 7 days of logs
-   - Format for LLM system prompt injection
-
-2. **Create `agent/chat.py`**
-   - Main conversation loop
-   - Intent detection (chat vs log mode)
-   - Parse food input and extract structured data
-   - Call LLM with proper context
-   - Handle JSON responses for log creation
-
-3. **Create `ui/mascot.py`**
-   - ASCII art for Ross + eel
-   - Startup banner
-
-4. **Create `ui/cli.py`**
-   - Rich-based interface
-   - Startup screen
-   - Input/output formatting
-   - Special commands
-   - Error display
-
-5. **Create `main.py`**
-   - Entry point
-   - Initialize all components
-   - Run onboarding if needed
-   - Start chat loop
-   - Handle Ctrl+C gracefully
-
-6. **Create `agent/__init__.py`**
-   - Export agent modules
-
-7. **Create `ui/__init__.py`**
-   - Export UI modules
-
-### Testing Tasks
-
-8. **Test with sample input** (from spec Section 15)
-   - Verify freeform input → correct `.md` output
-   - Check all 29 micronutrients in correct order
-   - Verify deficit calculation
-   - Test merge logic for updates
-
-9. **Run through testing checklist** (spec Section 14)
-   - [ ] Onboarding creates valid User Profile
-   - [ ] Freeform input produces correctly formatted file
-   - [ ] Filename is `DD-MM-YYYY.md`, frontmatter date is `YYYY-MM-DD`
-   - [ ] All 29 micronutrients in correct order
-   - [ ] Deficit calculated correctly
-   - [ ] Existing file updated (not overwritten)
-   - [ ] Macros recalculated after update
-   - [ ] Git commit after every write
-   - [ ] Git push works when configured
-   - [ ] "update yesterday" works
-   - [ ] "log last Tuesday" works
-   - [ ] Missing LLM key shows clear error
-   - [ ] Missing git remote skips push gracefully
-   - [ ] Special commands work
-   - [ ] Mascot displays on startup
+**Optional:** Add USDA API key for enhanced food data (see [docs/guides/INTELLIGENCE_USER_GUIDE.md](docs/guides/INTELLIGENCE_USER_GUIDE.md))
 
 ---
 
-## 🎯 Key Design Decisions
+## 🎯 How It Works
 
-### File Format
-Daily logs use YAML frontmatter with specific formatting:
-- Numeric fields are bare integers (no quotes)
-- Meal fields are quoted strings or em dash `—`
-- Notes field uses `●` as section separator
-- Raw weight noted as `(r)` e.g., `450g Chicken Breast (r)`
-- File ends with: `Main View: [[Nutrition Dashboard]]`
+### 1. Natural Language Input
+```
+You: "I had 2 eggs and toast for breakfast, then chicken and rice for lunch"
+```
 
-### Micronutrient Order (Always This Exact Order)
+### 2. AI Processing
+- Intent classification (logging vs. chat)
+- Date resolution (today, yesterday, last Tuesday, etc.)
+- Nutrition extraction using LLM + enrichment APIs
+- Confidence scoring for accuracy
+
+### 3. Structured Output
+Creates/updates markdown file with YAML frontmatter:
+```yaml
+---
+date: 2026-05-25
+calories: 1250
+protein: 118
+carbs: 95
+fats: 35
+breakfast: "2 Eggs, 2 Slices Whole Wheat Toast"
+lunch: "200g Chicken Breast, 150g White Rice"
+---
+```
+
+### 4. Intelligence Layer
+- Stores in SQLite database for structured queries
+- Generates embeddings for semantic search
+- Learns patterns from your eating habits
+- Detects trends in your nutrition
+- Provides proactive suggestions
+
+### 5. Git Sync
+```
+[unagi] create: 2026-05-25 — Breakfast + Lunch logged. Cal: 1250 | P: 118g | Deficit: -750
+```
+
+---
+
+## 🧪 Testing
+
+Run the test suite:
+```bash
+# All tests
+python3 -m pytest tests/ -v
+
+# Specific test modules
+python3 -m pytest tests/test_memory.py -v
+python3 -m pytest tests/test_data_enrichment.py -v
+python3 -m pytest tests/test_intelligence.py -v
+```
+
+**Current Status:** ✅ All tests passing (3/3 modules)
+
+---
+
+## 🏗️ Architecture Highlights
+
+### Dependency Injection
+- Single `Container` class manages all dependencies
+- No global state or singletons outside container
+- Easy to test with mock dependencies
+
+### Dual-Write System
+- Markdown files remain the source of truth
+- Database provides structured queries
+- Vector store enables semantic search
+- Graceful degradation if memory systems unavailable
+
+### Custom RAG Pipeline
+- No LangChain or LangGraph dependencies
+- Built from scratch for full control
+- Hybrid retrieval (semantic + recency)
+- Optimized for nutrition tracking use case
+
+### Privacy-First
+- All data stays local on your machine
+- No cloud storage or external services (except LLM API)
+- Git sync is optional and user-controlled
+
+---
+
+## 📊 What's Tracked
+
+### Macronutrients
+- Calories, Protein, Carbs, Fats, Fiber
+
+### 29 Micronutrients (in exact order)
 Vitamin A, Vitamin C, Vitamin D, Vitamin E, Vitamin K, B1 (Thiamine), B2 (Riboflavin), B3 (Niacin), B5 (Pantothenic Acid), B6 (Pyridoxine), B7 (Biotin), B9 (Folate), B12 (Cobalamin), Choline, Calcium, Chromium, Copper, Iodine, Iron, Magnesium, Manganese, Molybdenum, Phosphorus, Potassium, Selenium, Sodium, Zinc, Omega-3, Omega-6
 
-### Git Commit Format
-```
-[unagi] <action>: <date> — <summary>
-
-Examples:
-[unagi] create: 2026-05-25 — Breakfast + Dinner logged. Cal: 1250 | P: 118g | Deficit: -750
-[unagi] update: 2026-05-25 — Added dinner. Cal: 1025 → 1250 | P: 110g → 118g
-```
-
----
-
-## 🔍 Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                     CLI Interface                       │
-│  (Rich formatting, pixel art mascot, special commands)  │
-└────────────────┬────────────────────────────────────────┘
-                 │
-┌────────────────▼────────────────────────────────────────┐
-│                   Agent Chat Loop                       │
-│  • Intent detection (chat vs log mode)                  │
-│  • Context injection (profile + last 7 days)            │
-│  • Conversation history management                      │
-└────┬──────────────────────────────────────────┬─────────┘
-     │                                          │
-┌────▼─────────────┐                  ┌─────────▼─────────┐
-│   LLM Client     │                  │  Context Loader   │
-│  (OpenAI API)    │                  │  (Profile + Logs) │
-└──────────────────┘                  └───────────────────┘
-                                                │
-                 ┌──────────────────────────────┴─────────┐
-                 │                                        │
-        ┌────────▼─────────┐                   ┌──────────▼────────┐
-        │  Vault Reader    │                   │   Vault Writer    │
-        │  (Parse YAML)    │                   │  (Create/Update)  │
-        └──────────────────┘                   └──────────┬────────┘
-                                                          │
-                                               ┌──────────▼────────┐
-                                               │   Git Manager     │
-                                               │ (Commit & Push)   │
-                                               └───────────────────┘
-```
-
----
-
-## 📚 Reference
-
-- **Specification:** `/Users/parthjindal/Downloads/UNAGI_DEV_SPEC.md`
-- **Sample Input/Output:** See spec Section 15
-- **Testing Checklist:** See spec Section 14
+### Intelligence Metrics
+- Eating patterns (meal timing, frequency)
+- Nutrient trends (7-day, 30-day averages)
+- Goal progress (calorie deficit, protein targets)
+- Ingredient preferences and portions
 
 ---
 
 ## 🤝 Contributing
 
-This is a personal project. The implementation follows the detailed specification document.
+This is a personal project, but suggestions and bug reports are welcome! Please open an issue on GitHub.
 
 ---
 
@@ -358,4 +256,15 @@ Private project - All rights reserved.
 
 ---
 
+## 🙏 Acknowledgments
+
+- Built with [Gemini 2.0 Flash](https://ai.google.dev/) for LLM capabilities
+- Powered by [ChromaDB](https://www.trychroma.com/) for vector storage
+- Uses [Sentence Transformers](https://www.sbert.net/) for embeddings
+- Nutrition data from [USDA FoodData Central](https://fdc.nal.usda.gov/) and [Open Food Facts](https://world.openfoodfacts.org/)
+
+---
+
 **Built with 🐍 total food awareness.**
+
+*"Unagi is a state of total awareness. Only by achieving true Unagi can you be prepared for any danger that may befall you."* — Ross Geller
