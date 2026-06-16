@@ -5,6 +5,15 @@ from config import get_settings
 from vault import get_vault_reader
 from .prompts import get_system_prompt
 
+# Import memory components for semantic retrieval
+try:
+    from memory.database import Database
+    from memory.vector_store import VectorStore
+    from memory.retrieval import get_relevant_context
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
+
 
 class ContextError(Exception):
     """Raised when context loading fails."""
@@ -18,6 +27,16 @@ class ContextLoader:
         """Initialize the context loader."""
         self.settings = get_settings()
         self.reader = get_vault_reader()
+        
+        # Initialize memory components if available
+        self.memory_db = None
+        self.vector_store = None
+        if MEMORY_AVAILABLE:
+            try:
+                self.memory_db = Database(self.settings.vault_path / "memory.db")
+                self.vector_store = VectorStore(self.settings.vault_path / "vector_store")
+            except Exception as e:
+                print(f"Warning: Could not initialize memory components: {str(e)}")
     
     def load_user_profile(self) -> Optional[Dict[str, Any]]:
         """Load user profile from vault.
@@ -31,7 +50,7 @@ class ContextLoader:
             print(f"Warning: Could not load user profile: {str(e)}")
             return None
     
-    def load_recent_logs(self, days: int = None) -> List[Dict[str, Any]]:
+    def load_recent_logs(self, days: Optional[int] = None) -> List[Dict[str, Any]]:
         """Load recent daily logs.
         
         Args:
@@ -48,6 +67,73 @@ class ContextLoader:
         except Exception as e:
             print(f"Warning: Could not load recent logs: {str(e)}")
             return []
+    
+    async def load_semantic_context(self, query: str, n_results: int = 5) -> List[Dict[str, Any]]:
+        """Load semantically relevant context using vector search.
+        
+        Args:
+            query: Query string to find relevant context
+            n_results: Number of results to return
+            
+        Returns:
+            List of relevant log entries with similarity scores
+        """
+        if not MEMORY_AVAILABLE or not self.memory_db or not self.vector_store:
+            # Fall back to recent logs if memory not available
+            return self.load_recent_logs(7)
+        
+        try:
+            return await get_relevant_context(
+                query=query,
+                vector_store=self.vector_store,
+                database=self.memory_db,
+                n_results=n_results
+            )
+        except Exception as e:
+            print(f"Warning: Semantic search failed, falling back to recent logs: {str(e)}")
+            return self.load_recent_logs(7)
+    
+    async def load_hybrid_context(self, query: Optional[str] = None, days: int = 7) -> List[Dict[str, Any]]:
+        """Load context using hybrid approach: semantic + recent.
+        
+        Args:
+            query: Optional query for semantic search
+            days: Number of recent days to include
+            
+        Returns:
+            Combined list of relevant logs (deduplicated)
+        """
+        # Always get recent logs
+        recent_logs = self.load_recent_logs(days)
+        
+        # If query provided and memory available, add semantic results
+        if query and MEMORY_AVAILABLE and self.memory_db and self.vector_store:
+            try:
+                semantic_logs = await self.load_semantic_context(query, n_results=5)
+                
+                # Combine and deduplicate by date
+                seen_dates = set()
+                combined = []
+                
+                # Add recent logs first (prioritize recency)
+                for log in recent_logs:
+                    date = log.get('date')
+                    if date and date not in seen_dates:
+                        seen_dates.add(date)
+                        combined.append(log)
+                
+                # Add semantic results if not already included
+                for log in semantic_logs:
+                    date = log.get('date')
+                    if date and date not in seen_dates:
+                        seen_dates.add(date)
+                        combined.append(log)
+                
+                return combined
+            except Exception as e:
+                print(f"Warning: Hybrid context failed, using recent logs only: {str(e)}")
+        
+        return recent_logs
     
     def load_full_context(self) -> Dict[str, Any]:
         """Load complete context (profile + recent logs).

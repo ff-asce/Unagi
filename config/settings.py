@@ -45,6 +45,10 @@ class Settings:
         self.git_author_email = os.getenv("GIT_AUTHOR_EMAIL", "unagi@local")
         self.git_remote_url = os.getenv("GIT_REMOTE_URL", "")
         self.git_remote_token = os.getenv("GIT_REMOTE_TOKEN", "")
+        
+        # Intelligence System API Keys (optional)
+        self.usda_api_key = os.getenv("USDA_API_KEY", "")
+        self.openfoodfacts_user_agent = os.getenv("OPENFOODFACTS_USER_AGENT", "Unagi/1.0")
     
     def _load_yaml(self):
         """Load configuration from config.yaml."""
@@ -69,6 +73,16 @@ class Settings:
         agent_config = config.get("agent", {})
         self.agent_context_days = agent_config.get("context_days", 7)
         self.agent_confirm_before_write = agent_config.get("confirm_before_write", True)
+        
+        # Intelligence system configuration
+        intelligence_config = config.get("intelligence", {})
+        self.intelligence_enabled = intelligence_config.get("enabled", True)
+        self.intelligence_memory_enabled = intelligence_config.get("memory_enabled", True)
+        self.intelligence_suggestions_enabled = intelligence_config.get("suggestions_enabled", True)
+        self.intelligence_data_enrichment_enabled = intelligence_config.get("data_enrichment_enabled", True)
+        self.intelligence_semantic_search_results = intelligence_config.get("semantic_search_results", 5)
+        self.intelligence_pattern_learning_days = intelligence_config.get("pattern_learning_days", 30)
+        self.intelligence_trend_detection_days = intelligence_config.get("trend_detection_days", 30)
         
         # Git configuration
         git_config = config.get("git", {})
@@ -120,6 +134,14 @@ class Settings:
     def get_user_profile_path(self) -> Path:
         """Get the full path to the User Profile file."""
         return self.get_data_path() / self.vault_user_profile_filename
+    
+    def get_memory_db_path(self) -> Path:
+        """Get the full path to the memory database file."""
+        return self.get_vault_path() / "memory.db"
+    
+    def get_vector_store_path(self) -> Path:
+        """Get the full path to the vector store directory."""
+        return self.get_vault_path() / "vector_store"
     
     def update_vault_root(self, new_path: str):
         """Update the vault root path in config.yaml.

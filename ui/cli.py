@@ -486,11 +486,16 @@ class CLI:
                 # Process message through orchestrator
                 result = self.orchestrator.process(user_input)
                 
-                # Display response
-                if result.success:
-                    self.show_response(result.message, "success")
+                # Display response (orchestrator returns a string)
+                if isinstance(result, str):
+                    self.show_response(result, "success")
+                elif hasattr(result, 'success'):
+                    if result.success:
+                        self.show_response(result.message, "success")
+                    else:
+                        self.show_response(result.message, "error")
                 else:
-                    self.show_response(result.message, "error")
+                    self.show_response(str(result), "success")
                 
             except KeyboardInterrupt:
                 self.running = False

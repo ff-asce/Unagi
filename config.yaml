@@ -9,6 +9,15 @@ vault:
 agent:
   context_days: 7  # How many recent log files to inject as context
   confirm_before_write: true  # Ask user to confirm before writing files
+
+intelligence:
+  enabled: true  # Enable intelligence system (learning, trends, suggestions)
+  memory_enabled: true  # Enable database and vector store
+  suggestions_enabled: true  # Show proactive suggestions
+  data_enrichment_enabled: true  # Use external APIs for nutrition data
+  semantic_search_results: 5  # Number of results for semantic search
+  pattern_learning_days: 30  # Days to analyze for pattern learning
+  trend_detection_days: 30  # Days to analyze for trend detection
   
 git:
   enabled: true

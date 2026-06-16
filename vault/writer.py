@@ -1,15 +1,21 @@
 """Writer for vault files (daily logs and user profile)."""
 from pathlib import Path
-from typing import Dict, Any, Optional, TYPE_CHECKING
+from typing import Dict, Any, Optional
 from datetime import datetime
 from config import get_settings
 from .parser import format_log_data, merge_log_data, validate_log_data
 from .reader import get_vault_reader
 import yaml
+import asyncio
 
-if TYPE_CHECKING:
-    from config.settings import Settings
-    from vault.reader import VaultReader
+# Import memory components for dual-write
+try:
+    from memory.database import Database
+    from memory.vector_store import VectorStore
+    from memory.embeddings import generate_embedding, embed_log
+    MEMORY_AVAILABLE = True
+except ImportError:
+    MEMORY_AVAILABLE = False
 
 
 class WriteError(Exception):
@@ -20,15 +26,27 @@ class WriteError(Exception):
 class VaultWriter:
     """Writes data to the Obsidian vault."""
     
-    def __init__(self, settings: 'Settings', reader: 'VaultReader'):
-        """Initialize the vault writer with settings and reader.
+    def __init__(self, settings=None, reader=None):
+        """Initialize the vault writer with settings.
         
         Args:
-            settings: Settings instance (injected via container)
-            reader: VaultReader instance (injected via container)
+            settings: Settings instance (optional, will load if not provided)
+            reader: VaultReader instance (optional, will create if not provided)
         """
-        self.settings = settings
-        self.reader = reader
+        self.settings = settings or get_settings()
+        self.reader = reader or get_vault_reader()
+        
+        # Initialize memory components if available
+        self.memory_db = None
+        self.vector_store = None
+        if MEMORY_AVAILABLE:
+            try:
+                from memory.database import Database
+                vault_path = self.settings.get_vault_path()
+                self.memory_db = Database(vault_path / "memory.db")
+                self.vector_store = VectorStore(vault_path / "vector_store")
+            except Exception as e:
+                print(f"Warning: Could not initialize memory components: {str(e)}")
     
     def write_daily_log(
         self,
@@ -68,15 +86,64 @@ class VaultWriter:
             # Format as markdown with frontmatter
             content = format_log_data(data)
             
-            # Write to file
+            # Write to file (source of truth)
             log_path.parent.mkdir(parents=True, exist_ok=True)
             with open(log_path, 'w', encoding='utf-8') as f:
                 f.write(content)
+            
+            # Dual-write to database and vector store if available
+            if MEMORY_AVAILABLE and self.memory_db and self.vector_store:
+                try:
+                    asyncio.run(self._write_to_memory(date, data, content))
+                except Exception as e:
+                    print(f"Warning: Failed to write to memory systems: {str(e)}")
             
             return log_path
             
         except Exception as e:
             raise WriteError(f"Failed to write log for {date.date()}: {str(e)}")
+    
+    async def _write_to_memory(self, date: datetime, data: Dict[str, Any], content: str):
+        """Write log data to database and vector store.
+        
+        Args:
+            date: Date for the log
+            data: Log data dictionary
+            content: Formatted markdown content
+        """
+        # Prepare data for database
+        log_data = {
+            'date': date.date().isoformat(),
+            'calories': data.get('calories'),
+            'protein': data.get('protein'),
+            'carbs': data.get('carbs'),
+            'fats': data.get('fats'),
+            'fiber': data.get('fiber'),
+            'water_ml': data.get('water_ml'),
+            'weight_kg': data.get('weight_kg'),
+            'goal_calories': data.get('goal_calories'),
+            'goal_protein': data.get('goal_protein'),
+            'goal_carbs': data.get('goal_carbs'),
+            'goal_fats': data.get('goal_fats'),
+            'notes': data.get('notes'),
+            'meals': data.get('meals', [])
+        }
+        
+        # Insert into database
+        log_id = await self.memory_db.insert_log(log_data)
+        
+        # Generate embedding and add to vector store
+        embedding = generate_embedding(content)
+        await self.vector_store.add_document(
+            doc_id=f"log_{date.date().isoformat()}",
+            text=content,
+            embedding=embedding,
+            metadata={
+                'date': date.date().isoformat(),
+                'log_id': log_id,
+                'type': 'daily_log'
+            }
+        )
     
     def write_user_profile(self, data: Dict[str, Any]) -> Path:
         """Write or update the user profile file.
@@ -237,14 +304,10 @@ def get_vault_writer(reload: bool = False) -> VaultWriter:
         
     Returns:
         VaultWriter instance
-        
-    Note:
-        This is a convenience wrapper for backward compatibility.
-        New code should use dependency injection via Container.
     """
     global _vault_writer
     if _vault_writer is None or reload:
-        _vault_writer = VaultWriter(get_settings(), get_vault_reader())
+        _vault_writer = VaultWriter()
     return _vault_writer
 
 # Made with Bob

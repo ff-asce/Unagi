@@ -1,0 +1,145 @@
+{
+  "foods": [
+    {
+      "name": "Amul Masti Dahi",
+      "brand": "Amul",
+      "category": "dairy",
+      "serving_size": "100g",
+      "nutrients": {
+        "calories": 60,
+        "protein": 3.5,
+        "carbs": 5.0,
+        "fats": 2.5,
+        "fiber": 0.0
+      },
+      "confidence": 0.9,
+      "source": "manufacturer_label"
+    },
+    {
+      "name": "Soaked Chia Seeds",
+      "category": "seeds",
+      "serving_size": "18g",
+      "nutrients": {
+        "calories": 70,
+        "protein": 3.0,
+        "carbs": 6.0,
+        "fats": 4.5,
+        "fiber": 6.0
+      },
+      "confidence": 0.85,
+      "source": "usda_derived"
+    },
+    {
+      "name": "Soaked Basil Seeds",
+      "category": "seeds",
+      "serving_size": "6g",
+      "nutrients": {
+        "calories": 25,
+        "protein": 1.0,
+        "carbs": 4.0,
+        "fats": 0.5,
+        "fiber": 2.0
+      },
+      "confidence": 0.85,
+      "source": "usda_derived"
+    },
+    {
+      "name": "Paneer",
+      "category": "dairy",
+      "serving_size": "100g",
+      "nutrients": {
+        "calories": 265,
+        "protein": 18.0,
+        "carbs": 1.2,
+        "fats": 20.8,
+        "fiber": 0.0
+      },
+      "confidence": 0.9,
+      "source": "usda"
+    },
+    {
+      "name": "Ghee",
+      "category": "fats",
+      "serving_size": "1 tsp (5g)",
+      "nutrients": {
+        "calories": 45,
+        "protein": 0.0,
+        "carbs": 0.0,
+        "fats": 5.0,
+        "fiber": 0.0
+      },
+      "confidence": 0.95,
+      "source": "usda"
+    },
+    {
+      "name": "Basmati Rice (cooked)",
+      "category": "grains",
+      "serving_size": "100g",
+      "nutrients": {
+        "calories": 121,
+        "protein": 2.7,
+        "carbs": 25.2,
+        "fats": 0.4,
+        "fiber": 0.4
+      },
+      "confidence": 0.9,
+      "source": "usda"
+    },
+    {
+      "name": "Roti (whole wheat)",
+      "category": "grains",
+      "serving_size": "1 roti (40g)",
+      "nutrients": {
+        "calories": 106,
+        "protein": 3.5,
+        "carbs": 18.0,
+        "fats": 2.5,
+        "fiber": 2.7
+      },
+      "confidence": 0.85,
+      "source": "indian_nutrition_data"
+    },
+    {
+      "name": "Dal (cooked)",
+      "category": "legumes",
+      "serving_size": "100g",
+      "nutrients": {
+        "calories": 116,
+        "protein": 9.0,
+        "carbs": 20.0,
+        "fats": 0.4,
+        "fiber": 8.0
+      },
+      "confidence": 0.85,
+      "source": "usda"
+    },
+    {
+      "name": "Rajma (cooked)",
+      "category": "legumes",
+      "serving_size": "100g",
+      "nutrients": {
+        "calories": 127,
+        "protein": 8.7,
+        "carbs": 22.8,
+        "fats": 0.5,
+        "fiber": 6.4
+      },
+      "confidence": 0.85,
+      "source": "usda"
+    },
+    {
+      "name": "Chole (cooked)",
+      "category": "legumes",
+      "serving_size": "100g",
+      "nutrients": {
+        "calories": 164,
+        "protein": 8.9,
+        "carbs": 27.4,
+        "fats": 2.6,
+        "fiber": 7.6
+      },
+      "confidence": 0.85,
+      "source": "usda"
+    }
+  ]
+}
